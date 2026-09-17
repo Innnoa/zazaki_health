@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主题图标（Themed Icons, API 33+）单色层：与前景同形状，纯白填充，
+     由系统按用户主题着色，仅 alpha 生效。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M71.55,31.54A28.5,28.5 0 1 1 44.25,27.22"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M51.3,24.65L45.45,30.51L43.06,23.93Z"
+        android:fillColor="#FFFFFFFF" />
+
+    <path
+        android:pathData="M34,58L45,58L49,65L54,44L59,65L63,58L74,58"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="miter"
+        android:strokeMiterLimit="8" />
+</vector>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ========== 文字 ========== -->
+    <style name="Text.Header.Title" parent="">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_size_title</item>
+    </style>
+
+    <style name="Text.Header.Subtitle" parent="">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_size_subtitle</item>
+    </style>
+
+    <style name="Text.Stat.Value" parent="">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_size_stat_value</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="Text.Stat.Label" parent="">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_size_stat_label</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="Text.Section.Title" parent="">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_size_section</item>
+    </style>
+
+    <style name="Text.Banner" parent="">
+        <item name="android:textColor">@color/warning_deep</item>
+        <item name="android:textSize">@dimen/text_size_banner</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.Feedback" parent="">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_size_feedback</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="Text.Row.Date" parent="">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_size_row_date</item>
+    </style>
+
+    <style name="Text.Row.Marker" parent="">
+        <item name="android:textColor">@color/text_hint</item>
+        <item name="android:textSize">@dimen/text_size_row_marker</item>
+    </style>
+
+    <!-- ========== 卡片容器 ========== -->
+    <style name="Card.Surface" parent="">
+        <item name="android:background">@drawable/bg_card</item>
+    </style>
+
+    <!-- ========== 状态徽标（小圆角药丸）==========
+         布局模板默认用 Badge.NoData；运行时按行状态替换
+         background（bg_badge_*）+ 文字色（status_*_deep 等），见绑定说明。 -->
+    <style name="Badge.Base" parent="">
+        <item name="android:background">@drawable/bg_badge_nodata</item>
+        <item name="android:textColor">@color/nodata_deep</item>
+        <item name="android:textSize">@dimen/text_size_badge</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:paddingStart">@dimen/badge_padding_h</item>
+        <item name="android:paddingEnd">@dimen/badge_padding_h</item>
+        <item name="android:paddingTop">@dimen/badge_padding_v</item>
+        <item name="android:paddingBottom">@dimen/badge_padding_v</item>
+        <item name="android:gravity">center</item>
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <style name="Badge.Sent" parent="Badge.Base">
+        <item name="android:background">@drawable/bg_badge_sent</item>
+        <item name="android:textColor">@color/success_deep</item>
+    </style>
+
+    <style name="Badge.Pending" parent="Badge.Base">
+        <item name="android:background">@drawable/bg_badge_pending</item>
+        <item name="android:textColor">@color/warning_deep</item>
+    </style>
+
+    <style name="Badge.Today" parent="Badge.Base">
+        <item name="android:background">@drawable/bg_badge_today</item>
+        <item name="android:textColor">@color/primary_pressed</item>
+    </style>
+
+    <style name="Badge.NoData" parent="Badge.Base">
+        <!-- 与 Base 相同的灰底灰字 -->
+    </style>
+
+    <!-- ========== 按钮 ========== -->
+    <style name="Button.Primary" parent="">
+        <item name="android:background">@drawable/bg_btn_primary</item>
+        <item name="android:textColor">@color/btn_primary_text</item>
+        <item name="android:textSize">@dimen/text_size_button</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">@dimen/spacing_lg</item>
+        <item name="android:paddingEnd">@dimen/spacing_lg</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Button.BannerAction" parent="">
+        <item name="android:background">@drawable/bg_btn_banner_action</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textSize">@dimen/text_size_row_marker</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/height_btn_small</item>
+        <item name="android:paddingStart">@dimen/spacing_lg</item>
+        <item name="android:paddingEnd">@dimen/spacing_lg</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Button.GhostLink" parent="">
+        <item name="android:background">@drawable/bg_btn_ghost</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textSize">@dimen/text_size_link</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/height_btn_link</item>
+        <item name="android:paddingStart">@dimen/spacing_md</item>
+        <item name="android:paddingEnd">@dimen/spacing_md</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+</resources>

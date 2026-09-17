@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>健康数据看板</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231c7ed6'/%3E%3Cpath d='M6 17h4l2-5 3 10 3-7 2 2h6' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  /* ============================================================
+     设计令牌 —— 与 analyzer 报告 / app 浅色卡片风格对齐
+     ============================================================ */
+  :root{
+    --blue-800:#1864ab; --blue-700:#1971c2; --blue-600:#1c7ed6;
+    --blue-300:#74c0fc; --blue-100:#d0e5f8; --blue-50:#eaf3fc;
+    --bg:#f3f5f8; --card:#ffffff; --stroke:#e7ebf0; --divider:#eceff3;
+    --text:#1c2733; --text-2:#5b6b7b; --hint:#8a97a5;
+    --ok:#059669; --ok-deep:#056049; --ok-bg:#e2f4eb; --ok-stroke:#b7e2cd;
+    --warn:#d97706; --warn-deep:#92400e; --warn-bg:#fceedb; --warn-stroke:#f3d9b3;
+    --grey:#6c7784; --grey-bg:#f0f2f5; --grey-stroke:#dfe4ea;
+    --violet:#7048e8; --violet-deep:#5f3dc4; --violet-bg:#f0ebfd; --violet-stroke:#d5c8f7;
+    --err:#dc2626; --err-bg:#fdecec; --err-stroke:#f6c9c9;
+    --radius:16px; --radius-sm:12px; --radius-xs:10px;
+    --shadow:0 1px 2px rgba(28,39,51,.04), 0 8px 24px -14px rgba(28,39,51,.18);
+    --shadow-hi:0 6px 20px -8px rgba(28,126,214,.45);
+    --font:'Microsoft YaHei','PingFang SC','Hiragino Sans GB',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  /* 作者样式里的 display 会盖过浏览器默认的 [hidden]，必须显式兜底 */
+  [hidden]{display:none !important}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; font-family:var(--font); color:var(--text);
+    background:radial-gradient(1100px 520px at 50% -240px,#e6f1fb 0%,var(--bg) 58%) fixed, var(--bg);
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,p,dl,dd,dt,ul,figure{margin:0}
+  button{font-family:inherit}
+  .app{max-width:1080px;margin:0 auto;padding:22px 16px 40px}
+
+  /* ---------- 入场动效 ---------- */
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .reveal{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  .reveal:nth-child(2){animation-delay:.06s}
+  .reveal:nth-child(3){animation-delay:.12s}
+  .reveal:nth-child(4){animation-delay:.18s}
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  }
+
+  /* ---------- 顶栏 ---------- */
+  header.top{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand-mark{
+    width:44px;height:44px;flex:none;border-radius:13px;
+    background:linear-gradient(135deg,#3b9ae1,var(--blue-800));
+    display:grid;place-items:center;box-shadow:0 6px 16px -8px rgba(28,126,214,.8);
+  }
+  .brand-mark svg{width:26px;height:26px}
+  .brand h1{font-size:20px;letter-spacing:.2px;white-space:nowrap}
+  .brand p{font-size:12.5px;color:var(--hint)}
+  .top-tools{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .stamp{font-size:12px;color:var(--hint);text-align:right;line-height:1.35}
+  .stamp b{color:var(--text-2);font-weight:600}
+
+  .badge-demo{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+    color:var(--warn-deep);background:var(--warn-bg);border:1px solid var(--warn-stroke);
+    padding:3px 9px;border-radius:999px;
+  }
+  .badge-demo::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn)}
+
+  /* ---------- 按钮 ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    border-radius:10px;border:1px solid var(--stroke);background:#fff;color:var(--text-2);
+    font-size:13px;font-weight:600;padding:8px 13px;cursor:pointer;
+    transition:transform .15s,border-color .15s,background .15s,color .15s,box-shadow .15s;
+  }
+  .btn:hover{border-color:var(--blue-300);color:var(--blue-700)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .btn-primary{background:var(--blue-600);border-color:var(--blue-600);color:#fff}
+  .btn-primary:hover{background:var(--blue-700);border-color:var(--blue-700);color:#fff}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn svg{width:15px;height:15px}
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+
+  /* ---------- 错误条 ---------- */
+  .banner{
+    display:flex;gap:10px;align-items:flex-start;
+    background:var(--err-bg);border:1px solid var(--err-stroke);color:#9a1c1c;
+    border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:16px;font-size:13px;
+  }
+  .banner svg{width:17px;height:17px;flex:none;margin-top:2px}
+  .banner .banner-body{flex:1;min-width:0}
+  .banner b{display:block;margin-bottom:1px}
+  .banner code{font-size:12px;color:#7d1414;word-break:break-all}
+  .banner-close{
+    background:none;border:0;color:#9a1c1c;font-size:16px;line-height:1;
+    cursor:pointer;padding:2px 4px;border-radius:6px;
+  }
+  .banner-close:hover{background:rgba(154,28,28,.1)}
+
+  /* ---------- 状态卡 ---------- */
+  .status-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:14px;margin-bottom:16px;
+  }
+  .stat-card{padding:15px 16px 14px;position:relative;overflow:hidden}
+  .stat-card::after{
+    content:"";position:absolute;inset:0 0 auto 0;height:3px;
+    background:linear-gradient(90deg,var(--blue-300),var(--blue-600));opacity:.85;
+  }
+  .stat-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .stat-icon{
+    width:34px;height:34px;border-radius:10px;background:var(--blue-50);color:var(--blue-700);
+    display:grid;place-items:center;border:1px solid var(--blue-100);
+  }
+  .stat-icon svg{width:18px;height:18px}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+    padding:3px 9px;border-radius:999px;white-space:nowrap;
+  }
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.ok{color:var(--ok-deep);background:var(--ok-bg);border:1px solid var(--ok-stroke)}
+  .pill.warn{color:var(--warn-deep);background:var(--warn-bg);border:1px solid var(--warn-stroke)}
+  .pill.grey{color:var(--grey);background:var(--grey-bg);border:1px solid var(--grey-stroke)}
+  .pill.err{color:var(--err);background:var(--err-bg);border:1px solid var(--err-stroke)}
+  .pill.blue{color:var(--blue-700);background:var(--blue-50);border:1px solid var(--blue-100)}
+  .pill.violet{color:var(--violet-deep);background:var(--violet-bg);border:1px solid var(--violet-stroke)}
+  .pill.wrap{white-space:normal;text-align:left;line-height:1.4}
+  .stat-label{font-size:12.5px;color:var(--hint);font-weight:600;letter-spacing:.3px}
+  .stat-value{
+    font-size:19px;font-weight:700;color:var(--text);margin:2px 0 10px;
+    word-break:break-all;line-height:1.3;
+  }
+  .stat-value.muted{color:var(--hint);font-weight:600}
+  .stat-meta{display:flex;flex-direction:column;gap:5px;border-top:1px dashed var(--divider);padding-top:9px}
+  .stat-meta .row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:12.5px}
+  .stat-meta dt{color:var(--hint)}
+  .stat-meta dd{color:var(--text-2);font-weight:600;text-align:right}
+  .stat-meta dd.hi{color:var(--blue-700)}
+
+  /* ---------- 最近 14 天能力分析（analysis14 首页卡片） ---------- */
+  .a14-card{padding:16px 16px 14px;margin-bottom:16px;cursor:pointer;
+    transition:border-color .16s,box-shadow .16s}
+  .a14-card:hover{border-color:var(--blue-300);box-shadow:var(--shadow-hi)}
+  .a14-card:focus-within{border-color:var(--blue-300)}
+  .a14-card.no-link{cursor:default}
+  .a14-card.no-link:hover{border-color:var(--stroke);box-shadow:var(--shadow)}
+  .a14-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .a14-head .stat-icon{flex:none}
+  .a14-title-wrap{min-width:0;flex:1}
+  .a14-title{font-size:16px;font-weight:700;letter-spacing:.2px}
+  .a14-sub{font-size:12.5px;color:var(--hint);margin-top:1px}
+  .a14-open{margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+    font-size:12.5px;font-weight:700;color:var(--blue-700);text-decoration:none;
+    white-space:nowrap;padding:6px 10px;border-radius:9px;transition:background .15s}
+  .a14-open:hover{background:var(--blue-50)}
+  .a14-open:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .a14-open svg{width:14px;height:14px;transition:transform .16s}
+  .a14-card:hover .a14-open svg{transform:translateX(2px)}
+  #a14Run{white-space:nowrap}
+  .a14-body{margin-top:14px}
+
+  .a14-main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+  .a14-overall{display:flex;flex-direction:column;gap:6px;
+    padding-right:18px;border-right:1px dashed var(--divider)}
+  .a14-overall .cap{font-size:11.5px;font-weight:700;letter-spacing:.5px;color:var(--hint)}
+  .a14-overall .num{display:flex;align-items:center;gap:9px}
+  .a14-overall .num b{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1px;color:var(--blue-700)}
+  .a14-overall .num b.na{color:var(--hint)}
+  @media (max-width:640px){
+    .a14-title-wrap{flex:1 1 auto}
+    .a14-head{gap:8px}
+    .a14-title{font-size:15px}
+    .a14-main{grid-template-columns:1fr;gap:14px}
+    .a14-overall{flex-direction:row;align-items:baseline;gap:12px;
+      padding:0 0 12px;border-right:0;border-bottom:1px dashed var(--divider)}
+    .a14-overall .cap{order:2}
+  }
+
+  .a14-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+  .a14-chip{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;
+    border:1px solid var(--divider);border-radius:var(--radius-xs);background:#fbfcfe;padding:9px 11px}
+  .a14-chip .n{font-size:12.5px;font-weight:600;color:var(--text-2);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .a14-chip .s{font-size:17px;font-weight:800;line-height:1;color:var(--text)}
+  .a14-chip .s.na{color:var(--hint)}
+  .a14-chip.ok{background:var(--ok-bg);border-color:var(--ok-stroke)} .a14-chip.ok .s{color:var(--ok-deep)}
+  .a14-chip.blue{background:var(--blue-50);border-color:var(--blue-100)} .a14-chip.blue .s{color:var(--blue-700)}
+  .a14-chip.warn{background:var(--warn-bg);border-color:var(--warn-stroke)} .a14-chip.warn .s{color:var(--warn-deep)}
+  .a14-chip.err{background:var(--err-bg);border-color:var(--err-stroke)} .a14-chip.err .s{color:var(--err)}
+
+  .a14-hist{margin-top:14px;padding-top:12px;border-top:1px dashed var(--divider)}
+  .a14-hist-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+  .a14-hist-title{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--hint);text-transform:uppercase}
+  .a14-hist-note{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--hint)}
+  .a14-spark{display:block;width:100%;height:44px;margin-bottom:10px}
+  .a14-spark .area{fill:url(#a14area)}
+  .a14-spark .g-top{stop-color:var(--blue-300);stop-opacity:.55}
+  .a14-spark .g-bot{stop-color:var(--blue-50);stop-opacity:0}
+  .a14-spark .line{fill:none;stroke:var(--blue-600);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .a14-spark .dot{fill:var(--blue-600)}
+  .a14-days{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;
+    scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .a14-day{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;
+    border:1px solid var(--divider);border-radius:9px;background:#fbfcfe;padding:5px 9px;
+    transition:border-color .15s,background .15s,transform .15s}
+  .a14-day:hover{border-color:var(--blue-300);background:var(--blue-50);transform:translateY(-1px)}
+  .a14-day:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .a14-day .d{font-size:10.5px;font-weight:600;color:var(--hint);white-space:nowrap}
+  .a14-day .s{font-size:13.5px;font-weight:800;line-height:1.2;color:var(--text-2)}
+  .a14-day.ok .s{color:var(--ok-deep)}
+  .a14-day.blue .s{color:var(--blue-700)}
+  .a14-day.warn .s{color:var(--warn-deep)}
+  .a14-day.err .s{color:var(--err)}
+
+  .a14-quiet{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--hint);
+    background:#fbfcfe;border:1px dashed var(--stroke);border-radius:var(--radius-sm);padding:13px 14px}
+  .a14-quiet svg{width:20px;height:20px;flex:none;color:var(--blue-300)}
+  .a14-quiet b{color:var(--text-2);font-weight:700}
+  .a14-quiet .btn{margin-left:auto;flex:none}
+
+  /* ---------- 主区域 ---------- */
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+  @media (max-width:900px){ .main{grid-template-columns:1fr} }
+
+  /* ---------- 日历 ---------- */
+  .cal-card{padding:16px 16px 14px}
+  .cal-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .cal-title{font-size:16.5px;font-weight:700;letter-spacing:.2px}
+  .cal-title span{font-size:12.5px;color:var(--hint);font-weight:600;margin-left:6px}
+  .cal-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+  .icon-btn{
+    width:34px;height:34px;border-radius:10px;border:1px solid var(--stroke);background:#fff;
+    color:var(--text-2);display:grid;place-items:center;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s,transform .15s;
+  }
+  .icon-btn:hover:not(:disabled){border-color:var(--blue-300);color:var(--blue-700);background:var(--blue-50)}
+  .icon-btn:active:not(:disabled){transform:translateY(1px)}
+  .icon-btn:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .icon-btn:disabled{opacity:.38;cursor:not-allowed}
+  .icon-btn svg{width:16px;height:16px}
+  .btn-today{font-size:12.5px;padding:7px 11px}
+
+  .weekdays{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+    margin-bottom:6px;font-size:11.5px;color:var(--hint);font-weight:700;text-align:center;
+  }
+  .weekdays span{padding:2px 0}
+  .weekdays span.we{color:var(--blue-700)}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+
+  .day{
+    position:relative;aspect-ratio:1/1;border-radius:var(--radius-xs);border:1px solid var(--grey-stroke);
+    background:var(--grey-bg);color:var(--hint);font-size:14px;font-weight:700;
+    transition:transform .16s,box-shadow .16s,background .16s,border-color .16s;
+  }
+  /* 日期本体是独立按钮，与下方操作按钮为兄弟节点（避免 button 嵌套 button） */
+  .day-pick{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:5px;border:0;border-radius:inherit;background:none;color:inherit;font:inherit;
+    cursor:pointer;padding:0;appearance:none;
+  }
+  .day-pick:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .day .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+  .day.ok{background:var(--ok-bg);border-color:var(--ok-stroke);color:var(--ok-deep)}
+  .day.no_report{background:var(--warn-bg);border-color:var(--warn-stroke);color:var(--warn-deep)}
+  .day.no_ai{background:var(--violet-bg);border-color:var(--violet-stroke);color:var(--violet-deep)}
+  .day.no_data{background:var(--grey-bg);border-color:var(--grey-stroke);color:var(--hint)}
+  .day.no_data .dot{opacity:.4}
+  .day.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+  .day.future{opacity:.42}
+  .day.future .dot{opacity:.3}
+  .day:not(.empty):not(.future):hover{transform:translateY(-2px);box-shadow:var(--shadow-hi)}
+  .day.today{outline:2px solid var(--blue-600);outline-offset:-1px}
+  .day.today .tag{
+    position:absolute;top:-7px;right:-4px;font-size:9.5px;font-weight:800;letter-spacing:.5px;
+    background:var(--blue-600);color:#fff;border-radius:999px;padding:1px 5px;line-height:1.35;z-index:3;
+  }
+  .day.selected{box-shadow:var(--shadow-hi);border-color:var(--blue-600)}
+  .day.selected::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    background:var(--blue-600);opacity:.14;pointer-events:none;
+  }
+  /* 有操作按钮时，日期数字上移，给按钮让位；状态点已由按钮与底色表达，隐藏省空间 */
+  .day.has-act .day-pick{justify-content:flex-start;padding-top:8px}
+  .day.has-act .dot{display:none}
+
+  /* ---------- 日历内手动触发按钮 ---------- */
+  .day-act{
+    position:absolute;left:50%;bottom:5px;transform:translateX(-50%);z-index:2;
+    display:inline-flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;
+    font-size:10px;font-weight:800;line-height:1;letter-spacing:.2px;
+    padding:3px 6px;border-radius:999px;border:1px solid currentColor;background:#fff;color:inherit;
+    cursor:pointer;appearance:none;
+    transition:background .15s,color .15s,border-color .15s,opacity .15s;
+  }
+  .day-act svg{width:11px;height:11px;display:block}
+  .day-act .busy-text{display:none}
+  .day-act:focus-visible{outline:2px solid var(--blue-600);outline-offset:2px}
+  .day-act:disabled{opacity:.55;cursor:not-allowed}
+  .day.no_report .day-act{color:var(--warn-deep);border-color:var(--warn-stroke)}
+  .day.no_report .day-act:hover:not(:disabled){background:var(--warn-deep);border-color:var(--warn-deep);color:#fff}
+  .day.no_ai .day-act{color:var(--violet-deep);border-color:var(--violet-stroke)}
+  .day.no_ai .day-act:hover:not(:disabled){background:var(--violet-deep);border-color:var(--violet-deep);color:#fff}
+  .day.ok .day-act{color:var(--blue-700);border-color:var(--blue-100);padding:3px}
+  .day.ok .day-act:hover:not(:disabled){background:var(--blue-700);border-color:var(--blue-700);color:#fff}
+  .day.busy{animation:daypulse 1.4s ease-in-out infinite}
+  @keyframes daypulse{
+    0%,100%{box-shadow:0 0 0 2px var(--blue-300)}
+    50%{box-shadow:0 0 0 5px var(--blue-50)}
+  }
+  @media (min-width:521px){ .day-act .busy-text{display:inline} }
+
+  .spinner-sm{width:11px;height:11px;border-width:2px;flex:none}
+
+  /* ---------- 内联提示（不占用全局错误条） ---------- */
+  .flash{
+    display:flex;align-items:flex-start;gap:7px;font-size:12.5px;line-height:1.5;
+    border-radius:var(--radius-xs);padding:8px 10px;margin-top:10px;border:1px solid transparent;
+  }
+  .flash.info{color:var(--blue-700);background:var(--blue-50);border-color:var(--blue-100)}
+  .flash.ok{color:var(--ok-deep);background:var(--ok-bg);border-color:var(--ok-stroke)}
+  .flash.err{color:#9a1c1c;background:var(--err-bg);border-color:var(--err-stroke)}
+
+  .legend{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    margin-top:14px;padding-top:12px;border-top:1px dashed var(--divider);
+    font-size:12px;color:var(--text-2);
+  }
+  .legend .item{display:inline-flex;align-items:center;gap:6px}
+  .legend .swatch{width:13px;height:13px;border-radius:4px;border:1px solid}
+  .swatch.ok{background:var(--ok-bg);border-color:var(--ok-stroke)}
+  .swatch.no_report{background:var(--warn-bg);border-color:var(--warn-stroke)}
+  .swatch.no_ai{background:var(--violet-bg);border-color:var(--violet-stroke)}
+  .swatch.no_data{background:var(--grey-bg);border-color:var(--grey-stroke)}
+  .legend .spacer{margin-left:auto;color:var(--hint)}
+
+  .cal-state{padding:22px 6px;text-align:center;color:var(--hint);font-size:13px}
+  .cal-state b{display:block;color:var(--text-2);font-size:14px;margin-bottom:3px}
+
+  /* ---------- 详情面板 ---------- */
+  .detail-card{padding:16px;position:sticky;top:16px}
+  @media (max-width:900px){ .detail-card{position:static} }
+  .detail-head{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .detail-date{font-size:17px;font-weight:700}
+  .detail-sub{font-size:12px;color:var(--hint);margin-top:1px}
+  .detail-head .pill{margin-left:auto}
+  .detail-empty{
+    text-align:center;color:var(--hint);font-size:13px;
+    padding:26px 10px;border:1px dashed var(--stroke);border-radius:var(--radius-sm);background:#fcfdfe;
+  }
+  .detail-empty svg{width:30px;height:30px;color:var(--blue-300);margin-bottom:8px}
+  .detail-empty b{display:block;color:var(--text-2);font-size:13.5px;margin-bottom:2px}
+
+  .sec-title{
+    font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--hint);
+    text-transform:uppercase;margin:14px 0 8px;
+  }
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .metric{
+    background:#fbfcfe;border:1px solid var(--divider);border-radius:var(--radius-xs);
+    padding:9px 10px;min-width:0;
+  }
+  .metric .k{font-size:11.5px;color:var(--hint);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .metric .v{font-size:16px;font-weight:700;color:var(--text);display:flex;align-items:baseline;gap:3px;margin-top:1px}
+  .metric .v small{font-size:11px;font-weight:600;color:var(--hint)}
+  .metric .v.na{color:var(--hint);font-weight:600}
+
+  .dev-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+  .dev-list li{
+    display:flex;gap:8px;font-size:13px;color:var(--warn-deep);
+    background:var(--warn-bg);border:1px solid var(--warn-stroke);
+    border-radius:var(--radius-xs);padding:8px 10px;
+  }
+  .dev-list li::before{content:"!";flex:none;width:15px;height:15px;border-radius:50%;
+    background:var(--warn);color:#fff;font-size:11px;font-weight:800;
+    display:grid;place-items:center;margin-top:2px}
+  .dev-none{
+    font-size:13px;color:var(--ok-deep);background:var(--ok-bg);border:1px solid var(--ok-stroke);
+    border-radius:var(--radius-xs);padding:8px 10px;
+  }
+  .report-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .report-frame{
+    width:100%;height:430px;margin-top:10px;border:1px solid var(--stroke);
+    border-radius:var(--radius-sm);background:#fff;
+  }
+  .report-note{font-size:12px;color:var(--hint);margin-top:8px}
+  .spinner{
+    width:15px;height:15px;border-radius:50%;border:2px solid var(--blue-100);
+    border-top-color:var(--blue-600);animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-row{display:flex;align-items:center;gap:8px;color:var(--hint);font-size:13px;padding:14px 2px}
+
+  footer.foot{
+    margin-top:20px;text-align:center;font-size:11.5px;color:var(--hint);line-height:1.7;
+  }
+  footer.foot code{color:var(--text-2);font-size:11px}
+
+  /* ---------- 窄屏微调 ---------- */
+  @media (max-width:520px){
+    .app{padding:16px 12px 32px}
+    .brand h1{font-size:18px}
+    .stat-value{font-size:17px}
+    .grid,.weekdays{gap:5px}
+    .day{font-size:13px;border-radius:9px;aspect-ratio:1/1.16}
+    .day-pick{gap:4px}
+    .day.has-act .day-pick{padding-top:6px}
+    .day-act{font-size:9px;padding:2px 5px;bottom:3px}
+    .day.ok .day-act{padding:2px}
+    .day-act svg{width:10px;height:10px}
+    .day .dot{width:5px;height:5px}
+    .cal-card{padding:14px 12px 12px}
+    .detail-card{padding:14px 13px}
+    .metrics{gap:7px}
+    .report-frame{height:360px}
+    .top-tools{width:100%;margin-left:0}
+    .stamp{margin-left:auto}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 顶栏 ============ -->
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12h3.5l2-5 3 10 2.5-7 1.8 2H22"/>
+        </svg>
+      </span>
+      <div>
+        <h1>健康数据看板</h1>
+        <p>手机睡眠 · 心率 · 血氧 · 活动数据与 AI 晨报</p>
+      </div>
+    </div>
+    <div class="top-tools">
+      <span id="demoBadge" class="badge-demo" hidden>演示数据</span>
+      <div class="stamp" id="stamp">数据更新于 <b>—</b></div>
+      <button class="btn" id="refreshBtn" type="button" title="重新拉取状态与日历">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/>
+        </svg>
+        刷新
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ 错误提示 ============ -->
+  <div class="banner" id="banner" hidden role="alert">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+    </svg>
+    <div class="banner-body">
+      <b id="bannerTitle">加载失败</b>
+      <div id="bannerMsg"></div>
+    </div>
+    <button class="banner-close" id="bannerClose" type="button" aria-label="关闭提示">&times;</button>
+  </div>
+
+  <!-- ============ 顶部状态卡 ============ -->
+  <section class="status-grid" id="statusGrid" aria-label="系统状态">
+    <article class="card stat-card reveal" data-slot="ai">
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3"/><path d="M12 18v3"/><path d="M4.2 7.5l2.6 1.5"/><path d="M17.2 15l2.6 1.5"/>
+            <path d="M4.2 16.5l2.6-1.5"/><path d="M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/>
+          </svg>
+        </span>
+        <span class="pill grey">加载中</span>
+      </div>
+      <p class="stat-label">AI 解读</p>
+      <div class="stat-value muted">—</div>
+      <dl class="stat-meta"><div class="row"><dt>正在读取状态…</dt><dd></dd></div></dl>
+    </article>
+
+    <article class="card stat-card reveal" data-slot="phone">
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.5 18.5h3"/>
+          </svg>
+        </span>
+        <span class="pill grey">加载中</span>
+      </div>
+      <p class="stat-label">手机联通</p>
+      <div class="stat-value muted">—</div>
+      <dl class="stat-meta"><div class="row"><dt>正在读取状态…</dt><dd></dd></div></dl>
+    </article>
+
+    <article class="card stat-card reveal" data-slot="data">
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="6" rx="7.5" ry="3.2"/><path d="M4.5 6v12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V6"/>
+            <path d="M4.5 12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2"/>
+          </svg>
+        </span>
+        <span class="pill grey">加载中</span>
+      </div>
+      <p class="stat-label">数据积累</p>
+      <div class="stat-value muted">—</div>
+      <dl class="stat-meta"><div class="row"><dt>正在读取状态…</dt><dd></dd></div></dl>
+    </article>
+  </section>
+
+  <!-- ============ 最近 14 天能力分析 ============ -->
+  <section class="card a14-card reveal" id="a14Card" aria-label="最近 14 天能力分析">
+    <div class="a14-head">
+      <span class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 17.5 8.5 11l4 3.5L21 5"/><path d="M15 5h6v6"/>
+        </svg>
+      </span>
+      <div class="a14-title-wrap">
+        <h2 class="a14-title">最近 14 天能力分析</h2>
+        <p class="a14-sub" id="a14Sub">正在读取…</p>
+      </div>
+      <span class="pill grey wrap" id="a14Status" hidden></span>
+      <button class="btn" id="a14Run" type="button" hidden>生成 14 天分析</button>
+      <a class="a14-open" id="a14Open" href="/analysis14" hidden>查看完整分析
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+        </svg>
+      </a>
+    </div>
+    <div class="a14-body">
+      <div id="a14Main">
+        <div class="loading-row"><span class="spinner"></span>正在读取 14 天分析…</div>
+      </div>
+      <p class="flash" id="a14Flash" hidden></p>
+      <div class="a14-hist" id="a14Hist" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============ 日历 + 详情 ============ -->
+  <div class="main">
+
+    <section class="card cal-card reveal" aria-label="月度日历">
+      <div class="cal-head">
+        <h2 class="cal-title" id="calTitle">— 年 — 月</h2>
+        <div class="cal-nav">
+          <button class="btn btn-today" id="todayBtn" type="button">回到今天</button>
+          <button class="icon-btn" id="prevBtn" type="button" aria-label="上一个月" title="上一个月">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <button class="icon-btn" id="nextBtn" type="button" aria-label="下一个月" title="下一个月">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="weekdays" aria-hidden="true">
+        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span><span class="we">日</span>
+      </div>
+      <div class="grid" id="calGrid" role="grid" aria-label="日期网格"></div>
+      <div id="calState" class="cal-state" hidden></div>
+      <div class="legend">
+        <span class="item"><i class="swatch ok"></i>正常</span>
+        <span class="item"><i class="swatch no_report"></i>未整理（缺报告）</span>
+        <span class="item"><i class="swatch no_ai"></i>无AI（仅模板）</span>
+        <span class="item"><i class="swatch no_data"></i>无数据</span>
+        <span class="spacer">点击某天查看详情</span>
+      </div>
+      <p class="flash" id="calFlash" hidden></p>
+    </section>
+
+    <aside class="card detail-card reveal" id="detailCard" aria-live="polite" aria-label="当日详情">
+      <div class="detail-head">
+        <div>
+          <div class="detail-date" id="detailDate">当日详情</div>
+          <div class="detail-sub" id="detailSub">选择日历中的一天</div>
+        </div>
+        <span class="pill grey" id="detailPill">待选择</span>
+      </div>
+      <div class="detail-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/>
+        </svg>
+        <b>尚未选择日期</b>
+        点击左侧日历中的某一天，查看当日指标与偏离项。
+      </div>
+    </aside>
+
+  </div>
+
+  <footer class="foot">
+    <div id="footNote">数据来源：手机端 SHealth 上传 · 报告由 analyzer 生成</div>
+    <div>接口 <code>/api/status</code> · <code>/api/calendar</code> · <code>/api/day</code> · <code>/report/YYYYMMDD</code></div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================================
+     1) 演示数据（?demo=1）—— 完全隔离，演示模式不发起任何网络请求
+     ============================================================================ */
+  var DEMO = (function () {
+    var NO_REPORT = ['20260824', '20260903', '20260908', '20260910', '20260911'];
+    var NO_AI     = ['20260912'];   // 有报告但仅模板解读 → no_ai
+    var AUG_DAYS  = [10,11,12,13,14,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+    var SEP_DAYS  = [1,2,3,4,5,6,7,8,9,10,11,12,13];   // 今天 09-14 尚未上传 → no_data
+    var TODAY = '20260914';
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    // 真正“有上传数据”的日期集合（其余 elapsed 日期按 no_data 返回，与后端一致）
+    var DATA_DAYS = {};
+    AUG_DAYS.forEach(function (d) { DATA_DAYS['202608' + pad(d)] = true; });
+    SEP_DAYS.forEach(function (d) { DATA_DAYS['202609' + pad(d)] = true; });
+
+    // 与真实 API 相同的返回形状：只返回 <= 今天的日期，未来日期省略
+    function calendarFor(month) {
+      var parts = month.split('-'), y = +parts[0], m = +parts[1];
+      var lastDom = new Date(y, m, 0).getDate();
+      var out = [];
+      for (var d = 1; d <= lastDom; d++) {
+        var c = '' + y + pad(m) + pad(d);
+        if (c > TODAY) continue;
+        var hasData = DATA_DAYS[c] === true;
+        var status = !hasData ? 'no_data'
+                   : (NO_REPORT.indexOf(c) >= 0 ? 'no_report'
+                   : (NO_AI.indexOf(c) >= 0 ? 'no_ai' : 'ok'));
+        out.push({
+          date: y + '-' + pad(m) + '-' + pad(d),
+          has_data: hasData,
+          has_report: hasData && NO_REPORT.indexOf(c) < 0,
+          llm_source: hasData && NO_REPORT.indexOf(c) < 0
+            ? (NO_AI.indexOf(c) >= 0 ? 'template' : 'llm') : null,
+          status: status
+        });
+      }
+      return { month: month, days: out };
+    }
+
+    var calendar = { '2026-08': calendarFor('2026-08'), '2026-09': calendarFor('2026-09') };
+
+    // 少量“手写”样本（贴近真实数值），其余用确定性生成器补齐
+    var OVERRIDES = {
+      '20260913': { sleep_score: 85, sleep_duration: '10小时35分', hr_night_mean: 65.2, spo2_night_mean: 95.4, steps: 5927, energy: 88.7, water_ml: 1200,
+        deviations: ['入睡时刻较近 7 天基线晚 48 分钟', '夜均心率高于基线 4.2 bpm'] },
+      '20260910': { sleep_score: 68, sleep_duration: '6小时12分', hr_night_mean: 72.8, spo2_night_mean: 93.1, steps: 3110, energy: 54.2, water_ml: 600,
+        deviations: ['睡眠时长低于基线 1 小时 50 分', '夜均血氧低于基线 2.3%', '饮水偏少'] },
+      '20260908': { sleep_score: 74, sleep_duration: '7小时40分', hr_night_mean: 69.4, spo2_night_mean: 94.6, steps: 8420, energy: 71.5, water_ml: 1500,
+        deviations: ['步数高于基线 2100 步'] },
+      '20260906': { sleep_score: 81, sleep_duration: '8小时55分', hr_night_mean: 66.8, spo2_night_mean: 95.1, steps: 6380, energy: 79.4, water_ml: 1350,
+        deviations: [] }
+    };
+
+    function demoDay(compactDate) {
+      if (DATA_DAYS[compactDate] !== true) return null;   // 无上传数据 → /api/day 无详情
+      var isReport = NO_REPORT.indexOf(compactDate) < 0;
+      var o = OVERRIDES[compactDate], n = +compactDate.slice(-2);
+      var summary = o ? {
+        sleep_score: o.sleep_score, sleep_duration: o.sleep_duration, hr_night_mean: o.hr_night_mean,
+        spo2_night_mean: o.spo2_night_mean, steps: o.steps, energy: o.energy, water_ml: o.water_ml
+      } : {
+        sleep_score: 70 + ((n * 7) % 24),
+        sleep_duration: (6 + (n % 3)) + '小时' + pad((n * 13) % 60) + '分',
+        hr_night_mean: Math.round((62 + (n % 9) * 0.9) * 10) / 10,
+        spo2_night_mean: Math.round((93.5 + (n % 5) * 0.4) * 10) / 10,
+        steps: 2500 + ((n * 613) % 8000),
+        energy: Math.round((55 + (n % 40) * 0.9) * 10) / 10,
+        water_ml: 600 + ((n * 137) % 1400)
+      };
+      var deviations = o ? o.deviations : (n % 4 === 0 ? ['入睡时刻较基线偏晚'] : []);
+      var iso = compactDate.slice(0, 4) + '-' + compactDate.slice(4, 6) + '-' + compactDate.slice(6, 8);
+      return {
+        date: iso,
+        has_data: true,
+        has_report: isReport,
+        report_url: isReport ? '/report/' + compactDate : null,
+        llm_source: isReport ? (NO_AI.indexOf(compactDate) >= 0 ? 'template' : 'llm') : null,
+        summary: summary,
+        deviations: deviations
+      };
+    }
+
+    var days = {};
+    AUG_DAYS.forEach(function (d) { var c = '202608' + pad(d); var v = demoDay(c); if (v) days[c] = v; });
+    SEP_DAYS.forEach(function (d) { var c = '202609' + pad(d); var v = demoDay(c); if (v) days[c] = v; });
+
+    // 演示报告页（srcdoc 内嵌，与真实报告视觉一致）
+    function reportHTML(compactDate, day) {
+      var s = (day && day.summary) || {};
+      function v(x, u) { return (x === null || x === undefined || x === '') ? '—' : (x + (u || '')); }
+      var devs = (day && day.deviations && day.deviations.length)
+        ? '<ul>' + day.deviations.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>'
+        : '<p class="muted">未见明显偏离。</p>';
+      return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1"><style>' +
+        "body{font-family:'Microsoft YaHei',system-ui,sans-serif;max-width:720px;margin:20px auto;padding:0 16px;color:#212529;line-height:1.6}" +
+        'h1{font-size:20px}h2{font-size:16px;border-bottom:1px solid #f1f3f5;padding-bottom:4px;margin-top:20px}' +
+        'p{margin:8px 0}b{color:#1c7ed6}.muted{color:#868e96;font-size:13px}' +
+        'table{border-collapse:collapse;margin:10px 0}td,th{border:1px solid #dee2e6;padding:4px 12px;font-size:14px}' +
+        'ul{margin:8px 0 8px 20px}.tag{display:inline-block;background:#fceedb;color:#92400e;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700}' +
+        '</style></head><body>' +
+        '<h1>健康晨报 ' + compactDate + ' <span class="tag">演示报告</span></h1>' +
+        '<p class="muted">来源 演示数据 · 本页由看板演示模式内嵌生成，不来自后端</p>' +
+        '<h2>【昨夜总结】</h2><p>睡眠得分 <b>' + v(s.sleep_score) + '</b>，睡眠时长 <b>' + v(s.sleep_duration) + '</b>，' +
+        '夜均心率 ' + v(s.hr_night_mean, ' bpm') + '，夜均血氧 ' + v(s.spo2_night_mean, '%') + '。</p>' +
+        '<h2>【连续多天趋势】</h2><p>近 7 天睡眠得分总体平稳，周末入睡时刻偏晚，工作日恢复较快。</p>' +
+        '<h2>【作息调整建议】</h2><p>建议把入睡时刻稳定在 23:30 前，周末与工作日相差不超过 1 小时，以提升睡眠规律性。</p>' +
+        '<h2>【健康建议】</h2><p>保持每日 6000 步以上活动量，饮水 1200–1500 ml，午后适量日照有助于夜间入睡。</p>' +
+        '<h2>【风险提示】</h2>' + devs +
+        '<table><tr><th>指标</th><th>数值</th></tr>' +
+        '<tr><td>睡眠得分</td><td>' + v(s.sleep_score) + '</td></tr>' +
+        '<tr><td>睡眠时长</td><td>' + v(s.sleep_duration) + '</td></tr>' +
+        '<tr><td>夜均心率</td><td>' + v(s.hr_night_mean, ' bpm') + '</td></tr>' +
+        '<tr><td>夜均血氧</td><td>' + v(s.spo2_night_mean, '%') + '</td></tr>' +
+        '<tr><td>步数</td><td>' + v(s.steps) + '</td></tr>' +
+        '<tr><td>能量</td><td>' + v(s.energy) + '</td></tr>' +
+        '<tr><td>饮水</td><td>' + v(s.water_ml, ' ml') + '</td></tr></table>' +
+        '</body></html>';
+    }
+
+    // 14 天分析历史（日期, overall, sleep, cardio, activity, circadian）—— 演示用
+    var A14_HISTORY = [
+      ['2026-08-31', 76, 80, 72, 70, 83],
+      ['2026-09-01', 75, 79, 71, 72, 82],
+      ['2026-09-02', 74, 77, 70, 71, 81],
+      ['2026-09-03', 73, 75, 70, 69, 80],
+      ['2026-09-04', 75, 78, 71, 71, 82],
+      ['2026-09-05', 76, 79, 72, 73, 83],
+      ['2026-09-06', 77, 81, 73, 72, 84],
+      ['2026-09-07', 76, 80, 72, 71, 83],
+      ['2026-09-08', 75, 79, 71, 70, 82],
+      ['2026-09-09', 77, 81, 73, 72, 84],
+      ['2026-09-10', 74, 76, 70, 68, 81],
+      ['2026-09-11', 75, 78, 71, 70, 82],
+      ['2026-09-12', 77, 81, 73, 71, 84],
+      ['2026-09-13', 78, 82, 74, 69, 85]
+    ];
+
+    return {
+      today: '20260914',
+      month: '2026-09',
+      status: {
+        receiver: { listening: true, host: '127.0.0.1', port: 8899 },
+        phone: { last_upload_local: '2026-09-13 09:01', last_upload_ago_hours: 24.1, latest_date: '20260913' },
+        data: { total_days: 34, first_date: '20260810', last_date: '20260913',
+                days_without_report: NO_REPORT.slice() },
+        ai: { enabled: true, key_present: true, model: 'deepseek-v4-flash',
+              latest_report_source: 'llm', latest_report_date: '20260909' },
+        generated_at_local: '2026-09-14 10:30'
+      },
+      calendar: calendar,
+      days: days,
+      analysis14: {
+        latest: {
+          exists: true, stale: false, llm_source: 'llm', latest_data_date: '2026-09-13',
+          date: '2026-09-13',
+          window: { start: '2026-08-31', end: '2026-09-13' },
+          overall: 78, label: '良好',
+          capabilities: {
+            sleep_recovery: { score: 82, label: '良好' },
+            cardio_autonomic: { score: 74, label: '良好' },
+            activity_fitness: { score: 69, label: '一般' },
+            circadian_regularity: { score: 85, label: '优秀' }
+          }
+        },
+        scores: {
+          scores: A14_HISTORY.map(function (r) {
+            return { date: r[0], overall: r[1], sleep_recovery: r[2],
+                     cardio_autonomic: r[3], activity_fitness: r[4], circadian_regularity: r[5] };
+          })
+        }
+      },
+      reportHTML: reportHTML
+    };
+  })();
+
+  /* ============================================================================
+     2) 工具函数
+     ============================================================================ */
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function compactOf(iso) { return String(iso).replace(/-/g, ''); }
+  function isoOfCompact(c) {
+    c = String(c || '');
+    return c.length === 8 ? c.slice(0, 4) + '-' + c.slice(4, 6) + '-' + c.slice(6, 8) : c;
+  }
+  function todayCompact() {
+    var d = new Date();
+    return '' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate());
+  }
+  function monthOfCompact(c) { return c.slice(0, 4) + '-' + c.slice(4, 6); }
+  function fmtNum(x, dec) {
+    if (x === null || x === undefined || x === '' || isNaN(x)) return null;
+    var n = Number(x);
+    return dec === undefined ? String(n) : n.toFixed(dec).replace(/\.0+$/, '');
+  }
+  function agoText(h) {
+    if (h === null || h === undefined || isNaN(h)) return '—';
+    var n = Number(h);
+    if (n < 1) return '刚刚（不足 1 小时）';
+    if (n < 48) return '约 ' + n.toFixed(1) + ' 小时前';
+    var d = n / 24;
+    return '约 ' + (d < 10 ? d.toFixed(1) : Math.round(d)) + ' 天前';
+  }
+  function weekdayCN(compact) {
+    var iso = isoOfCompact(compact).split('-');
+    var w = new Date(+iso[0], +iso[1] - 1, +iso[2]).getDay();
+    return ['周日','周一','周二','周三','周四','周五','周六'][w];
+  }
+  // 冻结契约 4 态：ok / no_report / no_ai / no_data
+  function statusMeta(s) {
+    if (s === 'ok')        return { label: '正常',   pill: 'ok'     };
+    if (s === 'no_report') return { label: '未整理', pill: 'warn'   };
+    if (s === 'no_ai')     return { label: '无AI',   pill: 'violet' };
+    if (s === 'no_data')   return { label: '无数据', pill: 'grey'   };
+    return { label: '未知', pill: 'grey' };
+  }
+  // /api/day 不带 status 时，按同样规则推导，保证日历与详情面板一致
+  function dayStatusOf(day) {
+    if (!day) return 'no_data';
+    if (day.status) return day.status;
+    if (day.has_data === false) return 'no_data';
+    if (!day.has_report) return 'no_report';
+    return day.llm_source === 'template' ? 'no_ai' : 'ok';
+  }
+
+  /* ============================================================================
+     3) 状态 + 数据源（真实 / 演示，两条互不干扰的路径）
+     ============================================================================ */
+  var IS_DEMO = new URLSearchParams(location.search).get('demo') === '1';
+
+  var state = {
+    demo: IS_DEMO,
+    today: IS_DEMO ? DEMO.today : todayCompact(),
+    month: IS_DEMO ? DEMO.month : monthOfCompact(todayCompact()),
+    status: null,
+    calendar: null,
+    selected: null,
+    detail: null,
+    loadingMonth: false,
+    firstMonth: null,
+    statusOk: null,
+    calOk: null,
+    busy: null            // 进行中的同步分析 {date, scope, startedAt, elapsed, timer}
+  };
+
+  var RealAPI = {
+    status: function () { return fetchJSON('/api/status'); },
+    calendar: function (month) { return fetchJSON('/api/calendar?month=' + encodeURIComponent(month)); },
+    day: function (compact) { return fetchJSON('/api/day?date=' + encodeURIComponent(compact)); },
+    analysis14Latest: function () { return fetchJSON('/api/analysis14/latest'); },
+    analysis14Scores: function () { return fetchJSON('/api/analysis14/scores'); },
+    analyze: function (date, scope) {
+      return postJSON('/api/analyze', { date: date, scope: scope });
+    }
+  };
+
+  var DemoAPI = {
+    status: function () { return Promise.resolve(DEMO.status); },
+    calendar: function (month) { return Promise.resolve(DEMO.calendar[month] || { month: month, days: [] }); },
+    day: function (compact) { return Promise.resolve(DEMO.days[compact] || null); },
+    analysis14Latest: function () { return Promise.resolve(DEMO.analysis14.latest); },
+    analysis14Scores: function () { return Promise.resolve(DEMO.analysis14.scores); },
+    // 演示模式：不发任何请求，模拟一次成功的同步分析（让 spinner 可见）
+    analyze: function (date, scope) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve({ ok: true, date: date, scope: scope, returncode: 0,
+                    duration_s: 1.4, stdout: '', stderr: '' });
+        }, 1400);
+      });
+    }
+  };
+
+  var API = IS_DEMO ? DemoAPI : RealAPI;
+
+  function fetchJSON(url) {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 8000);
+    return fetch(url, {
+      signal: ctrl ? ctrl.signal : undefined,
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).finally(function () { clearTimeout(timer); });
+  }
+
+  // POST /api/analyze 是同步接口，daily+14d 可能 40–90s，超时放宽到 4 分钟
+  function postJSON(url, body, timeoutMs) {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs || 240000);
+    return fetch(url, {
+      method: 'POST',
+      signal: ctrl ? ctrl.signal : undefined,
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      return res.json().catch(function () { return null; }).then(function (data) {
+        if (!res.ok) {                            // 400 {"error":..} 等
+          var e = new Error((data && data.error) ? data.error : ('HTTP ' + res.status));
+          e.status = res.status;
+          throw e;
+        }
+        return data;
+      });
+    }).finally(function () { clearTimeout(timer); });
+  }
+
+  /* ============================================================================
+     4) 错误提示
+     ============================================================================ */
+  function showError(title, detail) {
+    $('bannerTitle').textContent = title;
+    $('bannerMsg').innerHTML = detail
+      ? esc(detail) + (IS_DEMO ? '' : '（接口未就绪时属预期现象，可稍后点「刷新」重试）')
+      : '';
+    $('banner').hidden = false;
+  }
+  function clearError() { $('banner').hidden = true; }
+  $('bannerClose').addEventListener('click', clearError);
+
+  /* ============================================================================
+     5) 状态卡渲染
+     ============================================================================ */
+  function metaRow(k, v, hi) {
+    return '<div class="row"><dt>' + esc(k) + '</dt><dd' + (hi ? ' class="hi"' : '') + '>' + esc(v) + '</dd></div>';
+  }
+  function statCard(slot, icon, pill, pillClass, label, value, muted, rows) {
+    var card = document.querySelector('.stat-card[data-slot="' + slot + '"]');
+    if (!card) return;
+    card.innerHTML =
+      '<div class="stat-top">' +
+        '<span class="stat-icon" aria-hidden="true">' + icon + '</span>' +
+        '<span class="pill ' + pillClass + '">' + esc(pill) + '</span>' +
+      '</div>' +
+      '<p class="stat-label">' + esc(label) + '</p>' +
+      '<div class="stat-value' + (muted ? ' muted' : '') + '">' + esc(value) + '</div>' +
+      '<dl class="stat-meta">' + rows + '</dl>';
+  }
+
+  var ICON_AI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 3v3"/><path d="M12 18v3"/><path d="M4.2 7.5l2.6 1.5"/><path d="M17.2 15l2.6 1.5"/>' +
+    '<path d="M4.2 16.5l2.6-1.5"/><path d="M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.2"/></svg>';
+  var ICON_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.5 18.5h3"/></svg>';
+  var ICON_DATA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<ellipse cx="12" cy="6" rx="7.5" ry="3.2"/><path d="M4.5 6v12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2V6"/>' +
+    '<path d="M4.5 12c0 1.8 3.4 3.2 7.5 3.2s7.5-1.4 7.5-3.2"/></svg>';
+
+  function renderStatus(st) {
+    var ai = st.ai || {}, phone = st.phone || {}, data = st.data || {}, recv = st.receiver || {};
+
+    // --- AI 卡 ---
+    var aiOn = ai.enabled === true && ai.key_present === true;
+    var srcMap = { llm: 'AI 解读', template: '模板解读' };
+    var srcLabel = ai.latest_report_source ? (srcMap[ai.latest_report_source] || ai.latest_report_source) : '暂无报告';
+    statCard('ai', ICON_AI,
+      aiOn ? '已启用' : (ai.key_present ? '未启用' : '未配置密钥'),
+      aiOn ? 'ok' : 'warn',
+      'AI 解读',
+      ai.model || '未配置模型',
+      !ai.model,
+      metaRow('最新报告来源', srcLabel, ai.latest_report_source === 'llm') +
+      metaRow('最新报告日期', ai.latest_report_date ? isoOfCompact(ai.latest_report_date) : '暂无') +
+      metaRow('密钥状态', ai.key_present ? '已配置' : '缺失'));
+
+    // --- 手机联通卡 ---
+    var listening = recv.listening === true;
+    var ago = phone.last_upload_ago_hours;
+    var fresh = typeof ago === 'number' && ago <= 36;
+    var phonePill, phonePillClass;
+    if (!listening) { phonePill = '接收端未监听'; phonePillClass = 'err'; }
+    else if (ago === null || ago === undefined) { phonePill = '暂无上传'; phonePillClass = 'warn'; }
+    else if (fresh) { phonePill = '最近有上传'; phonePillClass = 'ok'; }
+    else { phonePill = '上传已超时'; phonePillClass = 'warn'; }
+    statCard('phone', ICON_PHONE, phonePill, phonePillClass,
+      '手机联通',
+      agoText(ago),
+      ago === null || ago === undefined,
+      metaRow('最近上传', phone.last_upload_local || '—') +
+      metaRow('最新数据日期', phone.latest_date ? isoOfCompact(phone.latest_date) : '—') +
+      metaRow('接收端口', (recv.host || '—') + ':' + (recv.port === undefined ? '—' : recv.port)));
+
+    // --- 数据卡 ---
+    var missing = (data.days_without_report || []).length;
+    statCard('data', ICON_DATA,
+      data.total_days ? '已积累 ' + data.total_days + ' 天' : '暂无数据',
+      data.total_days ? 'ok' : 'grey',
+      '数据积累',
+      data.last_date ? isoOfCompact(data.last_date) : '—',
+      !data.last_date,
+      metaRow('已收集天数', data.total_days === null || data.total_days === undefined ? '—' : data.total_days + ' 天') +
+      metaRow('起始日期', data.first_date ? isoOfCompact(data.first_date) : '—') +
+      metaRow('缺失报告', missing + ' 天', missing > 0));
+
+    $('stamp').innerHTML = '数据更新于 <b>' + esc(st.generated_at_local || '—') + '</b>';
+  }
+
+  function renderStatusError() {
+    var row = metaRow('状态接口不可用', '请确认 dashboard.py 已启动');
+    statCard('ai', ICON_AI, '读取失败', 'err', 'AI 解读', '—', true, row);
+    statCard('phone', ICON_PHONE, '读取失败', 'err', '手机联通', '—', true, row);
+    statCard('data', ICON_DATA, '读取失败', 'err', '数据积累', '—', true, row);
+    $('stamp').innerHTML = '数据更新于 <b>—</b>';
+  }
+
+  /* ============================================================================
+     6) 日历渲染
+     ============================================================================ */
+  /* ---------- 日历单元格内的手动触发按钮 ---------- */
+  // 未整理 → 「整理」；无AI → 「重跑AI」；正常 → 图标式「重跑」（保持日历清爽）
+  var DAY_ACT = {
+    no_report: { label: '整理',   what: '整理' },
+    no_ai:     { label: '重跑AI', what: '重跑 AI 解读' },
+    ok:        { label: '',       what: '重跑', icon: true }
+  };
+  var ICON_RERUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"' +
+    ' stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/>' +
+    '<path d="M21 4v5h-5"/></svg>';
+
+  function dayActHTML(status, compact, busy) {
+    var a = DAY_ACT[status];
+    if (!a) return '';
+    if (busy) {
+      return '<button type="button" class="day-act is-busy" data-date="' + compact + '"' +
+             ' disabled aria-busy="true" aria-label="正在分析 ' + esc(isoOfCompact(compact)) + '">' +
+             '<span class="spinner spinner-sm"></span>' +
+             '<span class="busy-text">分析中</span></button>';
+    }
+    return '<button type="button" class="day-act" data-date="' + compact + '"' +
+           ' data-status="' + status + '"' +
+           ' aria-label="' + esc(a.what + ' ' + isoOfCompact(compact) + ' 的分析与报告') + '"' +
+           ' title="' + esc(a.what + ' ' + isoOfCompact(compact)) + '">' +
+           (a.icon ? ICON_RERUN : esc(a.label)) + '</button>';
+  }
+
+  function renderCalendarShell() {
+    var parts = state.month.split('-');
+    $('calTitle').innerHTML = esc(parts[0]) + ' 年 ' + esc(String(+parts[1])) + ' 月' +
+      (state.month === monthOfCompact(state.today) ? '<span>本月</span>' : '');
+    $('prevBtn').disabled = !!state.firstMonth && state.month <= state.firstMonth;
+    $('nextBtn').disabled = state.month >= monthOfCompact(state.today);
+  }
+
+  function renderCalendar(cal) {
+    var grid = $('calGrid');
+    var stateBox = $('calState');
+    var parts = state.month.split('-');
+    var y = +parts[0], m = +parts[1];
+
+    var map = {};
+    (cal && cal.days ? cal.days : []).forEach(function (d) {
+      map[compactOf(d.date)] = d;
+    });
+
+    var firstDow = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 周一为首列
+    var lastDom = new Date(y, m, 0).getDate();
+    var html = '';
+
+    for (var i = 0; i < firstDow; i++) html += '<div class="day empty" aria-hidden="true"></div>';
+
+    for (var d = 1; d <= lastDom; d++) {
+      var compact = '' + y + pad2(m) + pad2(d);
+      var entry = map[compact];
+      var status = entry && entry.status ? entry.status : 'no_data';
+      var isFuture = compact > state.today;
+      var isToday = compact === state.today;
+      var meta = statusMeta(status);
+      var busy = !!state.busy && state.busy.scope !== 'analysis14' && state.busy.date === compact;
+      var act = (!isFuture && DAY_ACT[status]) ? status : null;
+      var classes = ['day', status];
+      if (isFuture) classes.push('future');
+      if (isToday) classes.push('today');
+      if (state.selected === compact) classes.push('selected');
+      if (act) classes.push('has-act');
+      if (busy) classes.push('busy');
+
+      var aria = isoOfCompact(compact) + ' ' + weekdayCN(compact) + '，' + meta.label +
+                 (isToday ? '，今天' : '') + (isFuture ? '，未来日期' : '');
+      var ariaPick = aria + '，查看详情';
+      html += '<div class="' + classes.join(' ') + '" role="gridcell" data-date="' + compact + '">' +
+                (isToday ? '<span class="tag">今</span>' : '') +
+                '<button type="button" class="day-pick"' +
+                  ' aria-label="' + esc(ariaPick) + '"' +
+                  (isFuture ? ' aria-disabled="true" tabindex="-1"' : '') + '>' +
+                  '<span class="dnum">' + d + '</span><span class="dot"></span>' +
+                '</button>' +
+                (act ? dayActHTML(status, compact, busy) : '') +
+              '</div>';
+    }
+
+    grid.innerHTML = html;
+
+    var hasAny = Object.keys(map).length > 0;
+    if (!hasAny) {
+      grid.hidden = true;
+      stateBox.hidden = false;
+      stateBox.innerHTML = '<b>该月暂无数据</b>换一个月看看，或确认手机端是否已上传。';
+    } else {
+      grid.hidden = false;
+      stateBox.hidden = true;
+    }
+
+    Array.prototype.forEach.call(grid.querySelectorAll('.day-pick'), function (b) {
+      var cell = b.closest('.day');
+      if (!cell || cell.classList.contains('future')) return;
+      b.addEventListener('click', function () { selectDay(cell.getAttribute('data-date')); });
+    });
+
+    // 单元格内手动触发：整理 / 重跑AI / 重跑（scope=both）
+    Array.prototype.forEach.call(grid.querySelectorAll('.day-act'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();                       // 不触发当日详情选择
+        var date = b.getAttribute('data-date');
+        runAnalyze(date, 'both', b, function () {
+          loadCalendar(state.month);
+          loadStatus();
+          loadAnalysis14();
+          if (state.selected === date) selectDay(date);
+        });
+      });
+    });
+
+    // 已有分析在跑时，禁用其余触发按钮
+    if (state.busy) {
+      Array.prototype.forEach.call(grid.querySelectorAll('.day-act'), function (b) { b.disabled = true; });
+    }
+  }
+
+  function renderCalendarError(msg) {
+    $('calGrid').hidden = true;
+    var box = $('calState');
+    box.hidden = false;
+    box.innerHTML = '<b>日历加载失败</b>' + esc(msg || '无法获取该月数据') +
+      '<div style="margin-top:10px"><button type="button" class="btn" id="calRetry">重试</button></div>';
+    var r = $('calRetry');
+    if (r) r.addEventListener('click', function () { loadCalendar(state.month); });
+  }
+
+  /* ============================================================================
+     7) 详情面板
+     ============================================================================ */
+  var METRICS = [
+    { key: 'sleep_score',      label: '睡眠得分', dec: 0 },
+    { key: 'sleep_duration',   label: '睡眠时长', raw: true },
+    { key: 'hr_night_mean',    label: '夜均心率', unit: 'bpm', dec: 1 },
+    { key: 'spo2_night_mean',  label: '夜均血氧', unit: '%',   dec: 1 },
+    { key: 'steps',            label: '步数',     unit: '步',  dec: 0 },
+    { key: 'energy',           label: '能量',     dec: 1 },
+    { key: 'water_ml',         label: '饮水',     unit: 'ml',  dec: 0 }
+  ];
+
+  function metricTile(m, summary) {
+    var v = summary ? summary[m.key] : null;
+    var text = m.raw ? (v === null || v === undefined || v === '' ? null : String(v)) : fmtNum(v, m.dec);
+    var body = text === null
+      ? '<span class="v na">—</span>'
+      : '<span class="v">' + esc(text) + (m.unit ? '<small>' + esc(m.unit) + '</small>' : '') + '</span>';
+    return '<div class="metric"><span class="k">' + esc(m.label) + '</span>' + body + '</div>';
+  }
+
+  function renderDetailEmpty(compact) {
+    $('detailDate').textContent = isoOfCompact(compact);
+    $('detailSub').textContent = weekdayCN(compact) + (compact === state.today ? ' · 今天' : '');
+    $('detailPill').className = 'pill grey';
+    $('detailPill').textContent = '无数据';
+    $('detailCard').querySelectorAll('.detail-empty, .metrics, .sec-title, .dev-list, .dev-none, .report-actions, .report-frame, .report-note, .loading-row')
+      .forEach(function (n) { n.remove(); });
+    var box = document.createElement('div');
+    box.className = 'detail-empty';
+    box.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>' +
+      '<b>' + (compact > state.today ? '未来日期' : '该日无数据') + '</b>' +
+      (compact > state.today ? '这一天还没有到，暂无健康数据。' : '手机端没有上传这一天的数据，无法生成指标。');
+    $('detailCard').appendChild(box);
+  }
+
+  function renderDetailLoading(compact) {
+    $('detailDate').textContent = isoOfCompact(compact);
+    $('detailSub').textContent = weekdayCN(compact) + (compact === state.today ? ' · 今天' : '');
+    $('detailPill').className = 'pill grey';
+    $('detailPill').textContent = '加载中';
+    var card = $('detailCard');
+    Array.prototype.slice.call(card.querySelectorAll('.detail-empty, .loading-row, .metrics, .sec-title, .dev-list, .dev-none, .report-actions, .report-frame, .report-note'))
+      .forEach(function (n) { n.remove(); });
+    var row = document.createElement('div');
+    row.className = 'loading-row';
+    row.innerHTML = '<span class="spinner"></span>正在读取当日数据…';
+    card.appendChild(row);
+  }
+
+  function renderDetail(compact, day) {
+    var card = $('detailCard');
+    var meta = statusMeta(dayStatusOf(day));
+
+    $('detailDate').textContent = isoOfCompact(day && day.date ? day.date : compact);
+    $('detailSub').textContent = weekdayCN(compact) + (compact === state.today ? ' · 今天' : '');
+    $('detailPill').className = 'pill ' + meta.pill;
+    $('detailPill').textContent = meta.label;
+
+    Array.prototype.slice.call(card.querySelectorAll('.detail-empty, .loading-row, .metrics, .sec-title, .dev-list, .dev-none, .report-actions, .report-frame, .report-note'))
+      .forEach(function (n) { n.remove(); });
+
+    // 指标
+    var t1 = document.createElement('p');
+    t1.className = 'sec-title';
+    t1.textContent = '当日指标';
+    card.appendChild(t1);
+
+    var grid = document.createElement('div');
+    grid.className = 'metrics';
+    grid.innerHTML = METRICS.map(function (m) { return metricTile(m, day && day.summary); }).join('');
+    card.appendChild(grid);
+
+    // 偏离项
+    var t2 = document.createElement('p');
+    t2.className = 'sec-title';
+    t2.textContent = '偏离项';
+    card.appendChild(t2);
+
+    var devs = (day && day.deviations) || [];
+    if (devs.length) {
+      var ul = document.createElement('ul');
+      ul.className = 'dev-list';
+      ul.innerHTML = devs.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('');
+      card.appendChild(ul);
+    } else {
+      var none = document.createElement('div');
+      none.className = 'dev-none';
+      none.textContent = '无显著偏离，各项指标接近基线。';
+      card.appendChild(none);
+    }
+
+    // 报告
+    var t3 = document.createElement('p');
+    t3.className = 'sec-title';
+    t3.textContent = '完整报告';
+    card.appendChild(t3);
+
+    if (day && day.has_report) {
+      var actions = document.createElement('div');
+      actions.className = 'report-actions';
+      var srcMap = { llm: 'AI 解读', template: '模板解读' };
+      actions.innerHTML =
+        '<button type="button" class="btn btn-primary" id="reportToggle">查看完整报告</button>' +
+        (IS_DEMO ? '' : '<a class="btn" id="reportOpen" target="_blank" rel="noopener" href="/report/' + encodeURIComponent(compact) + '">新标签打开</a>');
+      card.appendChild(actions);
+
+      var frame = document.createElement('iframe');
+      frame.className = 'report-frame';
+      frame.hidden = true;
+      frame.title = '健康报告 ' + compact;
+      card.appendChild(frame);
+
+      var note = document.createElement('p');
+      note.className = 'report-note';
+      note.textContent = '报告来源：' + (srcMap[day.llm_source] || '未标注') +
+        (IS_DEMO ? '（演示模式：报告为内嵌示例，不访问后端）' : '');
+      card.appendChild(note);
+
+      var toggle = $('reportToggle');
+      toggle.addEventListener('click', function () {
+        if (!frame.hidden) { frame.hidden = true; toggle.textContent = '查看完整报告'; return; }
+        if (!frame.getAttribute('data-loaded')) {
+          if (IS_DEMO) frame.srcdoc = DEMO.reportHTML(compact, day);
+          else frame.src = '/report/' + compact;
+          frame.setAttribute('data-loaded', '1');
+        }
+        frame.hidden = false;
+        toggle.textContent = '收起报告';
+      });
+    } else {
+      var noneReport = document.createElement('div');
+      noneReport.className = 'dev-none';
+      noneReport.style.cssText = 'color:var(--warn-deep);background:var(--warn-bg);border-color:var(--warn-stroke)';
+      noneReport.textContent = '当日有数据但尚未生成报告。运行 analyzer 后可补齐。';
+      card.appendChild(noneReport);
+    }
+  }
+
+  function renderDetailError(compact, msg) {
+    $('detailPill').className = 'pill err';
+    $('detailPill').textContent = '加载失败';
+    var card = $('detailCard');
+    Array.prototype.slice.call(card.querySelectorAll('.detail-empty, .loading-row, .metrics, .sec-title, .dev-list, .dev-none, .report-actions, .report-frame, .report-note'))
+      .forEach(function (n) { n.remove(); });
+    var box = document.createElement('div');
+    box.className = 'detail-empty';
+    box.innerHTML = '<b>无法读取当日数据</b>' + esc(msg || '') +
+      '<div style="margin-top:10px"><button type="button" class="btn" id="dayRetry">重试</button></div>';
+    card.appendChild(box);
+    var r = $('dayRetry');
+    if (r) r.addEventListener('click', function () { selectDay(compact); });
+  }
+
+  /* ============================================================================
+     7b) 最近 14 天能力分析卡（ANALYSIS14_SPEC §5.4 接口 / §6 报告）
+     ============================================================================ */
+  // 能力顺序与中文名取自 ANALYSIS14_SPEC §5.1 CAPS / CAP_LABELS（冻结）
+  var A14_CAPS = [
+    { key: 'sleep_recovery',       name: '睡眠恢复' },
+    { key: 'cardio_autonomic',     name: '心肺-自主神经' },
+    { key: 'activity_fitness',     name: '活动与体能' },
+    { key: 'circadian_regularity', name: '作息规律' }
+  ];
+
+  // 分档标签 → 既有 pill/chip 配色（≥85 优秀 / 70–84 良好 / 60–69 一般 / <60 需关注）
+  function a14Band(label, score) {
+    if (label === '优秀') return 'ok';
+    if (label === '良好') return 'blue';
+    if (label === '一般') return 'warn';
+    if (label === '需关注') return 'err';
+    if (typeof score === 'number' && isFinite(score)) {
+      if (score >= 85) return 'ok';
+      if (score >= 70) return 'blue';
+      if (score >= 60) return 'warn';
+      return 'err';
+    }
+    return 'grey';
+  }
+
+  function a14Score(v) {
+    if (v === null || v === undefined || v === '' || isNaN(v)) return null;
+    return String(Math.round(Number(v)));
+  }
+  // 接口的 date / window 为 ISO（YYYY-MM-DD）；链接需要 compact（YYYYMMDD）
+  function a14Iso(d) {
+    if (!d) return '';
+    var s = String(d);
+    return s.length === 8 ? isoOfCompact(s) : s;
+  }
+  function a14Compact(d) {
+    if (!d) return '';
+    var s = String(d);
+    return s.length === 8 ? s : compactOf(s);
+  }
+  function a14Short(d) {
+    var iso = a14Iso(d);
+    return iso.length >= 10 ? iso.slice(5) : iso;
+  }
+
+  // 卡片状态：尚未生成 / 已过期 / 无AI（模板）/ 已更新（冻结契约新增字段）
+  function renderA14Head(d) {
+    d = d || {};
+    var exists = (d.exists !== undefined) ? d.exists : !!d.date;
+    var st = $('a14Status'), run = $('a14Run');
+    var status, cls;
+    if (!exists) { status = '尚未生成'; cls = 'grey'; }
+    else if (d.stale) {
+      status = '已过期（最新数据 ' + (d.latest_data_date ? a14Short(d.latest_data_date) : '—') +
+               '，分析停在 ' + (d.date ? a14Short(d.date) : '—') + '）';
+      cls = 'warn';
+    }
+    else if (d.llm_source === 'template') { status = '无AI（模板）'; cls = 'violet'; }
+    else { status = '已更新'; cls = 'ok'; }
+
+    st.hidden = false;
+    st.className = 'pill wrap ' + cls;
+    st.textContent = status;
+
+    var runDate = d.latest_data_date || d.date || null;
+    if (runDate) {
+      run.hidden = false;
+      run.disabled = !!state.busy;
+      run.className = 'btn' + (exists ? '' : ' btn-primary');
+      run.textContent = exists ? '重跑 14 天分析' : '生成 14 天分析';
+      run.setAttribute('data-date', a14Compact(runDate));
+      run.setAttribute('aria-label',
+        (exists ? '重跑' : '生成') + ' 14 天分析（数据截至 ' + a14Iso(runDate) + '）');
+    } else {
+      run.hidden = true;
+      run.removeAttribute('data-date');
+    }
+  }
+
+  function renderA14HeadError() {
+    var st = $('a14Status');
+    st.hidden = false;
+    st.className = 'pill wrap grey';
+    st.textContent = '状态未知';
+    $('a14Run').hidden = true;
+    $('a14Run').removeAttribute('data-date');
+  }
+
+  function renderA14Main(d) {
+    var caps = d.capabilities || {};
+    var chips = A14_CAPS.map(function (c) {
+      var cap = caps[c.key] || {};
+      var s = a14Score(cap.score);
+      var b = a14Band(cap.label, cap.score);
+      var tip = c.name + (cap.label ? ' · ' + cap.label : '') + (s === null ? ' · 数据不足' : '');
+      return '<div class="a14-chip ' + b + '" title="' + esc(tip) + '">' +
+               '<span class="n">' + esc(c.name) + '</span>' +
+               '<span class="s' + (s === null ? ' na' : '') + '">' + esc(s === null ? '—' : s) + '</span>' +
+             '</div>';
+    }).join('');
+
+    var score = a14Score(d.overall);
+    var band = a14Band(d.label, d.overall);
+    var range = d.window && d.window.start && d.window.end
+      ? a14Iso(d.window.start) + ' ~ ' + a14Iso(d.window.end) : '';
+
+    $('a14Main').innerHTML =
+      '<div class="a14-main">' +
+        '<div class="a14-overall">' +
+          '<span class="cap">综合就绪度</span>' +
+          '<span class="num">' +
+            '<b' + (score === null ? ' class="na"' : '') + '>' + esc(score === null ? '—' : score) + '</b>' +
+            '<span class="pill ' + band + '">' + esc(d.label || '数据不足') + '</span>' +
+          '</span>' +
+        '</div>' +
+        '<div class="a14-chips">' + chips + '</div>' +
+      '</div>';
+
+    $('a14Sub').textContent = range ? range + ' · 截至 ' + a14Iso(d.date) : '截至 ' + a14Iso(d.date);
+    $('a14Card').setAttribute('data-href', '/analysis14');
+    $('a14Card').classList.remove('no-link');
+    $('a14Open').hidden = false;
+  }
+
+  function renderA14Quiet(title, note, retry) {
+    $('a14Main').innerHTML =
+      '<div class="a14-quiet">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>' +
+        '</svg>' +
+        '<span><b>' + esc(title) + '</b><br>' + esc(note) + '</span>' +
+        (retry ? '<button type="button" class="btn" id="a14Retry">重试</button>' : '') +
+      '</div>';
+    $('a14Card').removeAttribute('data-href');
+    $('a14Card').classList.add('no-link');
+    $('a14Open').hidden = true;
+    var r = $('a14Retry');
+    if (r) r.addEventListener('click', function (e) { e.stopPropagation(); loadAnalysis14(); });
+  }
+
+  function renderA14Empty(d) {
+    renderA14Quiet('暂无 14 天分析', '完成一次 14 天窗口分析后，这里会显示综合就绪度与四项能力分。', false);
+    $('a14Sub').textContent = (d && d.latest_data_date)
+      ? '数据截至 ' + a14Iso(d.latest_data_date) + ' · 尚未生成'
+      : '尚无可用窗口';
+  }
+
+  function renderA14Error(msg) {
+    renderA14Quiet('14 天分析暂不可用', msg || '无法读取接口', true);
+    $('a14Sub').textContent = '读取失败';
+  }
+
+  function a14Sparkline(rows) {
+    var vals = rows.map(function (r) { return Number(r.overall); })
+                   .filter(function (v) { return isFinite(v); });
+    if (vals.length < 2) return '';
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    var pad = Math.max(3, (max - min) * 0.3);
+    var lo = Math.max(0, min - pad), hi = Math.min(100, max + pad);
+    var span = (hi - lo) || 1;
+    var W = 320, H = 44, px = 4, py = 7;
+    var step = (W - px * 2) / (vals.length - 1);
+    var pts = vals.map(function (v, i) {
+      return [px + i * step, py + (H - py * 2) * (1 - (v - lo) / span)];
+    });
+    var line = pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+    var lastX = (px + (vals.length - 1) * step).toFixed(1);
+    var area = line + ' ' + lastX + ',' + (H - py) + ' ' + px + ',' + (H - py);
+    var last = pts[pts.length - 1];
+    return '<svg class="a14-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"' +
+      ' role="img" aria-label="历史综合就绪度趋势">' +
+      '<defs><linearGradient id="a14area" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" class="g-top"/><stop offset="1" class="g-bot"/>' +
+      '</linearGradient></defs>' +
+      '<polygon class="area" points="' + area + '"/>' +
+      '<polyline class="line" points="' + line + '" vector-effect="non-scaling-stroke"/>' +
+      '<circle class="dot" cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3"' +
+      ' vector-effect="non-scaling-stroke"/>' +
+    '</svg>';
+  }
+
+  function renderA14History(list) {
+    var box = $('a14Hist');
+    var rows = (list || []).filter(function (r) { return r && r.date; }).slice()
+      .sort(function (a, b) { return String(a.date) < String(b.date) ? -1 : 1; });
+    if (!rows.length) {                       // 无历史 → 安静隐藏，不占位
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    var days = rows.map(function (r) {
+      var s = a14Score(r.overall);
+      var b = a14Band(null, r.overall);
+      return '<a class="a14-day ' + b + '" href="/analysis14/' + encodeURIComponent(a14Compact(r.date)) + '"' +
+             ' title="' + esc(a14Iso(r.date) + ' · 综合就绪度 ' + (s === null ? '—' : s)) + '">' +
+             '<span class="d">' + esc(a14Short(r.date)) + '</span>' +
+             '<span class="s">' + esc(s === null ? '—' : s) + '</span></a>';
+    }).join('');
+
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="a14-hist-head">' +
+        '<span class="a14-hist-title">历史趋势</span>' +
+        '<span class="a14-hist-note">综合就绪度 · 近 ' + rows.length + ' 次</span>' +
+      '</div>' +
+      a14Sparkline(rows) +
+      '<div class="a14-days">' + days + '</div>';
+
+    var strip = box.querySelector('.a14-days');
+    if (strip) strip.scrollLeft = strip.scrollWidth;   // 最新一天在右侧
+  }
+
+  function loadAnalysis14() {
+    API.analysis14Latest().then(function (d) {
+      d = d || {};
+      renderA14Head(d);
+      if (d.exists === false || !d.date) { renderA14Empty(d); return; }
+      renderA14Main(d);
+    }).catch(function (err) {
+      renderA14HeadError();
+      renderA14Error(err && err.message ? err.message : '无法读取 /api/analysis14/latest');
+    });
+
+    API.analysis14Scores().then(function (d) {
+      renderA14History(d && d.scores ? d.scores : []);   // 无数据时 {"scores": []}
+    }).catch(function () {
+      renderA14History([]);
+    });
+  }
+
+  /* ============================================================================
+     7c) 手动触发分析（POST /api/analyze，同步执行，可能 40–90s）
+     ============================================================================ */
+  var flashTimers = {};
+
+  function flashEl(scope) { return scope === 'analysis14' ? $('a14Flash') : $('calFlash'); }
+
+  function setFlash(el, kind, msg) {
+    if (!el) return;
+    if (flashTimers[el.id]) { clearTimeout(flashTimers[el.id]); flashTimers[el.id] = null; }
+    el.className = 'flash ' + kind;
+    el.textContent = msg;
+    el.hidden = false;
+    if (kind !== 'info') {   // 进度提示常驻；结果提示自动消失
+      flashTimers[el.id] = setTimeout(function () { el.hidden = true; }, 15000);
+    }
+  }
+
+  function paintProgress() {
+    if (!state.busy || !state.busy.timer) return;
+    var scope = state.busy.scope;
+    var what = scope === 'analysis14'
+      ? '正在生成 14 天分析'
+      : '正在分析 ' + isoOfCompact(state.busy.date);
+    setFlash(flashEl(scope), 'info',
+      what + ' · 已用时 ' + state.busy.elapsed + 's…（同步执行，请保持页面打开）');
+  }
+
+  function stopTicker() {
+    if (state.busy && state.busy.timer) { clearInterval(state.busy.timer); state.busy.timer = null; }
+  }
+
+  function setBusy(on, btn, scope) {
+    if (on) {
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-busy');
+        btn.setAttribute('aria-busy', 'true');
+        btn.innerHTML = '<span class="spinner spinner-sm"></span>' +
+          '<span class="busy-text">' + (scope === 'analysis14' ? '分析中…' : '分析中') + '</span>';
+        var cell = btn.closest('.day');
+        if (cell) cell.classList.add('busy');
+      }
+      // 同步请求很慢，期间禁止并发触发
+      Array.prototype.forEach.call(document.querySelectorAll('.day-act, #a14Run'), function (b) { b.disabled = true; });
+      state.busy.timer = setInterval(function () {
+        if (!state.busy) return;
+        state.busy.elapsed = Math.round((Date.now() - state.busy.startedAt) / 1000);
+        paintProgress();
+      }, 1000);
+      paintProgress();
+    } else {
+      stopTicker();
+      state.busy = null;
+      Array.prototype.forEach.call(document.querySelectorAll('.day.busy'), function (n) { n.classList.remove('busy'); });
+      Array.prototype.forEach.call(document.querySelectorAll('.day-act, #a14Run'), function (b) { b.disabled = false; });
+    }
+  }
+
+  function analyzeErrText(res) {
+    if (!res) return '无响应';
+    if (res.stderr) {
+      var lines = String(res.stderr).trim().split('\n');
+      return (lines[lines.length - 1] || '').slice(0, 140) || '分析未成功';
+    }
+    if (res.returncode !== undefined && res.returncode !== 0) return 'returncode ' + res.returncode;
+    return '分析未成功';
+  }
+
+  function runAnalyze(dateCompact, scope, btn, onDone) {
+    if (state.busy) return;                       // 同一时间只允许一个同步分析
+    var started = Date.now();
+    state.busy = { date: dateCompact, scope: scope, startedAt: started, elapsed: 0, timer: null };
+    setBusy(true, btn, scope);
+
+    API.analyze(dateCompact, scope).then(function (res) {
+      stopTicker();
+      if (!res || res.ok === false) {             // 后端返回 ok:false → 内联错误，不动全局错误条
+        setFlash(flashEl(scope), 'err', '分析失败：' + analyzeErrText(res));
+        return null;
+      }
+      var secs = res.duration_s ? Math.round(res.duration_s) : Math.round((Date.now() - started) / 1000);
+      setFlash(flashEl(scope), 'ok',
+        '已完成 ' + isoOfCompact(dateCompact) +
+        (scope === 'analysis14' ? ' 的 14 天分析' : ' 的分析与报告') +
+        '（用时 ' + secs + 's）');
+      return onDone ? onDone() : null;
+    }).catch(function (err) {                     // 网络/HTTP 错误同样只内联提示
+      stopTicker();
+      setFlash(flashEl(scope), 'err', '分析失败：' + (err && err.message ? err.message : '未知错误'));
+    }).then(function () {
+      setBusy(false, btn, scope);
+    });
+  }
+
+  /* ============================================================================
+     8) 交互
+     ============================================================================ */
+  function selectDay(compact) {
+    state.selected = compact;
+    var grid = $('calGrid');
+    Array.prototype.forEach.call(grid.querySelectorAll('.day.selected'), function (n) { n.classList.remove('selected'); });
+    var btn = grid.querySelector('.day[data-date="' + compact + '"]');
+    if (btn) btn.classList.add('selected');
+
+    if (compact > state.today) { renderDetailEmpty(compact); return; }
+
+    renderDetailLoading(compact);
+    API.day(compact).then(function (day) {
+      if (!day || day.has_data === false) { renderDetailEmpty(compact); return; }
+      renderDetail(compact, day);
+    }).catch(function (err) {
+      renderDetailError(compact, err && err.message ? err.message : '请求失败');
+    });
+
+    // 手机端把详情滚进视野
+    if (window.matchMedia('(max-width:900px)').matches) {
+      setTimeout(function () {
+        $('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 40);
+    }
+  }
+
+  function loadCalendar(month) {
+    state.month = month;
+    renderCalendarShell();
+    state.loadingMonth = true;
+    $('calState').hidden = true;
+    return API.calendar(month).then(function (cal) {   // 必须 return：loadAll 依赖它判断整体失败
+      state.calendar = cal;
+      state.loadingMonth = false;
+      state.calOk = true;
+      renderCalendar(cal);
+    }).catch(function (err) {
+      state.loadingMonth = false;
+      state.calOk = false;
+      renderCalendarError(err && err.message ? err.message : '请求失败');
+    });
+  }
+
+  function loadStatus() {
+    return API.status().then(function (st) {
+      state.status = st;
+      state.statusOk = true;
+      renderStatus(st);
+      if (st && st.data && st.data.first_date) {
+        state.firstMonth = monthOfCompact(st.data.first_date);
+        renderCalendarShell();
+      }
+    }).catch(function () {
+      state.statusOk = false;
+      renderStatusError();
+    });
+  }
+
+  function loadAll(keepSelection) {
+    clearError();
+    state.statusOk = null;
+    state.calOk = null;
+    loadAnalysis14();   // 独立加载：14 天分析失败不触发全局错误条
+    var jobs = [loadStatus(), loadCalendar(state.month)];
+    Promise.allSettled(jobs).then(function () {
+      if (state.statusOk === false && state.calOk === false) {
+        showError('无法连接后端', '状态与日历接口均请求失败，请确认 dashboard.py 已启动并监听正确端口。');
+      } else if (state.statusOk === false || state.calOk === false) {
+        showError('部分数据加载失败', '部分接口暂时不可用，页面其余部分仍可正常查看。');
+      }
+      if (keepSelection && state.selected) selectDay(state.selected);
+    });
+  }
+
+  /* ============================================================================
+     9) 启动
+     ============================================================================ */
+  function init() {
+    if (IS_DEMO) {
+      $('demoBadge').hidden = false;
+      $('footNote').innerHTML = '当前为 <b>演示模式</b>（<code>?demo=1</code>）：全部内容来自内嵌示例数据，不访问后端接口。';
+    }
+
+    $('refreshBtn').addEventListener('click', function () { loadAll(true); });
+
+    // 14 天分析：手动生成 / 重跑（scope=analysis14）
+    $('a14Run').addEventListener('click', function (e) {
+      e.stopPropagation();                 // 不要同时触发整卡的 /analysis14 跳转
+      var btn = $('a14Run');
+      var date = btn.getAttribute('data-date');
+      if (!date) return;
+      runAnalyze(date, 'analysis14', btn, function () {
+        loadAnalysis14();
+        loadCalendar(state.month);
+        loadStatus();
+      });
+    });
+
+    // 整卡点击 → 最新 14 天报告；内部链接/按钮自行处理
+    $('a14Card').addEventListener('click', function (e) {
+      if (e.target.closest('a,button')) return;
+      var href = $('a14Card').getAttribute('data-href');
+      if (href) location.href = href;
+    });
+    $('prevBtn').addEventListener('click', function () {
+      var p = state.month.split('-'), y = +p[0], m = +p[1];
+      m -= 1; if (m < 1) { m = 12; y -= 1; }
+      loadCalendar(y + '-' + pad2(m));
+    });
+    $('nextBtn').addEventListener('click', function () {
+      if (state.month >= monthOfCompact(state.today)) return;
+      var p = state.month.split('-'), y = +p[0], m = +p[1];
+      m += 1; if (m > 12) { m = 1; y += 1; }
+      loadCalendar(y + '-' + pad2(m));
+    });
+    $('todayBtn').addEventListener('click', function () {
+      if (state.month !== monthOfCompact(state.today)) loadCalendar(monthOfCompact(state.today));
+      selectDay(state.today);
+    });
+
+    renderCalendarShell();
+    loadAll(false);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>

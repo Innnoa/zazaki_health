@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>HealthReader 健康数据同步 — launcher icon</title>
+  <desc>Flat minimal: a teal heart-rate pulse inside an open clockwise sync ring on a
+  pale teal field. Design source for the Android adaptive icon; the foreground art sits
+  inside the central 66x66 safe zone (also inside the 66dp safe circle), and the outer
+  area is mask bleed. Geometry is identical to res/drawable/ic_launcher_foreground.xml
+  scaled from the 108x108 adaptive-icon viewport by 512/108.</desc>
+  <rect width="512" height="512" fill="#E0F2EF"/>
+  <path d="M339.18,149.53A135.11,135.11 0 1 1 209.79,129.04"
+        fill="none" stroke="#0F766E" stroke-width="23.7" stroke-linecap="round"/>
+  <path d="M243.2,116.88L215.46,144.63L204.11,113.45Z" fill="#0F766E"/>
+  <path d="M161.19,274.96L213.33,274.96L232.3,308.15L256,208.59L279.7,308.15L298.67,274.96L350.81,274.96"
+        fill="none" stroke="#0F766E" stroke-width="26.07"
+        stroke-linecap="round" stroke-linejoin="miter" stroke-miterlimit="8"/>
+</svg>

@@ -1,0 +1,25 @@
+{
+  "llm": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-chat",
+    "api_key": "",
+    "enabled": true
+  },
+  "analysis": {
+    "baseline_days": 14,
+    "min_baseline_days": 3,
+    "min_hr_samples": 60,
+    "trend_days": 7,
+    "thresholds": {
+      "deep_min": 45,
+      "deep_ratio": 0.5,
+      "sleep_hours": 5.5,
+      "sleep_ratio": 0.7,
+      "hr_delta_bpm": 8,
+      "bedtime_drift_min": 90,
+      "energy_below_ratio": 0.6,
+      "spo2_low": 92.0,
+      "temp_delta_c": 0.8
+    }
+  }
+}

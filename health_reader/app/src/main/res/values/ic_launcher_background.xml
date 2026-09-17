@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 启动图标背景层：极浅主色底（colors.xml -> primary_soft #E0F2EF） -->
+    <color name="ic_launcher_background">#E0F2EF</color>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 细分隔线（竖向，用于统计列之间） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/divider_line" />
+    <size android:width="@dimen/divider_thickness" />
+</shape>

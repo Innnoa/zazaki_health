@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 横幅内「全部补传」白底药丸按钮，按下浅灰 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/soft_neutral" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/card_surface" />
+            <corners android:radius="@dimen/radius_pill" />
+        </shape>
+    </item>
+</selector>

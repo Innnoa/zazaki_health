@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待传横幅：琥珀浅底 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/warning_soft" />
+    <corners android:radius="@dimen/radius_small" />
+    <stroke android:width="@dimen/divider_thickness" android:color="@color/warning_stroke" />
+</shape>

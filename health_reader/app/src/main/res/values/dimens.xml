@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 间距刻度（4dp 基数） -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_lg">16dp</dimen>
+    <dimen name="spacing_xl">20dp</dimen>
+    <dimen name="spacing_2xl">24dp</dimen>
+    <dimen name="spacing_3xl">32dp</dimen>
+
+    <!-- 屏幕与卡片内边距 -->
+    <dimen name="screen_padding_h">20dp</dimen>
+    <dimen name="card_padding_h">16dp</dimen>
+    <dimen name="card_padding_v">18dp</dimen>
+    <dimen name="list_padding_v">6dp</dimen>
+    <dimen name="row_padding_h">16dp</dimen>
+
+    <!-- 圆角 -->
+    <dimen name="radius_card">16dp</dimen>
+    <dimen name="radius_btn">14dp</dimen>
+    <dimen name="radius_small">12dp</dimen>
+    <dimen name="radius_pill">100dp</dimen>
+
+    <!-- 控件高度 -->
+    <dimen name="height_btn_primary">52dp</dimen>
+    <dimen name="height_btn_small">32dp</dimen>
+    <dimen name="height_btn_link">40dp</dimen>
+    <dimen name="height_row_min">52dp</dimen>
+    <dimen name="height_stat_divider">40dp</dimen>
+
+    <!-- 字号 -->
+    <dimen name="text_size_title">22sp</dimen>
+    <dimen name="text_size_subtitle">13sp</dimen>
+    <dimen name="text_size_stat_value">22sp</dimen>
+    <dimen name="text_size_stat_label">12sp</dimen>
+    <dimen name="text_size_section">15sp</dimen>
+    <dimen name="text_size_row_date">15sp</dimen>
+    <dimen name="text_size_row_marker">12sp</dimen>
+    <dimen name="text_size_badge">12sp</dimen>
+    <dimen name="text_size_banner">14sp</dimen>
+    <dimen name="text_size_feedback">13sp</dimen>
+    <dimen name="text_size_button">16sp</dimen>
+    <dimen name="text_size_link">13sp</dimen>
+
+    <!-- 其他 -->
+    <dimen name="divider_thickness">1dp</dimen>
+    <dimen name="badge_padding_h">10dp</dimen>
+    <dimen name="badge_padding_v">4dp</dimen>
+    <dimen name="icon_feedback">20dp</dimen>
+    <dimen name="icon_banner">16dp</dimen>
+</resources>

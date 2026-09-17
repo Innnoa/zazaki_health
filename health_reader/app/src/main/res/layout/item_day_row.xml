@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 单日状态行：MM-DD + 周几/今日标记 + 状态徽标。
+     代码绑定顺序：先设好 text/背景再 addView，避免默认灰徽标闪现。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row_day"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/height_row_min"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/row_padding_h"
+    android:paddingEnd="@dimen/row_padding_h">
+
+    <!-- MM-DD -->
+    <TextView
+        android:id="@+id/tv_day_date"
+        style="@style/Text.Row.Date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <!-- 周几 / 「今日」标记 -->
+    <TextView
+        android:id="@+id/tv_day_label"
+        style="@style/Text.Row.Marker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_sm" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1" />
+
+    <!-- 状态徽标（✅ 已传 / ⚠️ 未传 / 📤 待同步 / 无数据） -->
+    <TextView
+        android:id="@+id/tv_day_status"
+        style="@style/Badge.NoData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>

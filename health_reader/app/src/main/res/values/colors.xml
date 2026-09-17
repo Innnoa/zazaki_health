@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 页面与表面 -->
+    <color name="bg_page">#F3F5F8</color>
+    <color name="card_surface">#FFFFFF</color>
+    <color name="card_stroke">#E7EBF0</color>
+    <color name="divider_line">#ECEFF3</color>
+    <color name="soft_neutral">#F2F5F7</color>
+
+    <!-- 文字 -->
+    <color name="text_primary">#1C2733</color>
+    <color name="text_secondary">#5B6B7B</color>
+    <color name="text_hint">#8A97A5</color>
+    <color name="text_disabled">#B7C2CB</color>
+
+    <!-- 主操作色（墨绿青） -->
+    <color name="primary">#0F766E</color>
+    <color name="primary_pressed">#0B5D55</color>
+    <color name="primary_soft">#E0F2EF</color>
+    <color name="primary_soft_stroke">#BCE0DA</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="btn_disabled_fill">#CBD9D5</color>
+    <color name="btn_disabled_text">#F0F6F4</color>
+
+    <!-- 成功 / 已传（绿） -->
+    <color name="success">#059669</color>
+    <color name="success_deep">#056049</color>
+    <color name="success_soft">#E2F4EB</color>
+    <color name="success_stroke">#B7E2CD</color>
+
+    <!-- 警告 / 未传（琥珀） -->
+    <color name="warning_icon">#D97706</color>
+    <color name="warning_deep">#92400E</color>
+    <color name="warning_soft">#FCEEDB</color>
+    <color name="warning_stroke">#F3D9B3</color>
+
+    <!-- 无数据（灰） -->
+    <color name="nodata_deep">#6C7784</color>
+    <color name="nodata_soft">#F0F2F5</color>
+    <color name="nodata_stroke">#DFE4EA</color>
+
+    <!-- 错误 -->
+    <color name="error">#DC2626</color>
+</resources>

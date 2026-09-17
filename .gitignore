@@ -1,0 +1,56 @@
+# 密钥 / 凭据（config.json 含 LLM api_key）
+config.json
+*.key
+*.env
+
+# 构建与缓存
+build/
+.gradle/
+.kotlin/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# 本地 IDE / 机器相关配置
+local.properties
+.idea/
+*.iml
+
+# 数据与产物
+outputs/
+hr_sample/
+HRTracker.zip
+*.log
+**/data/
+**/reports/
+
+# 第三方 SDK 与本地截图
+sdk_src/
+samsung-health-sensor-sdk-*.zip
+.playwright-mcp/
+/*.png
+
+# AI 状态文件（不纳入版本控制）
+CURRENT_TASK.md
+DECISIONS.md
+AI_GUIDE.md
+handoff/
+
+# AI 生成的设计/计划文档（自带 ai-generated 标记，不入版本控制；
+# 有用的架构/数据流信息已整理进 README）
+ALL_DAY_MODE_PLAN.md
+IMPLEMENTATION_PLAN.md
+health_reader/AI_PIPELINE.md
+health_reader/ANALYSIS14_SPEC.md
+health_reader/HEALTH_ANALYZER_IMPLEMENTATION_PLAN.md
+health_reader/HEALTH_ANALYZER_SPEC.md
+health_reader/HEALTH_EXTEND_V3_ANALYZER_PLAN.md
+health_reader/HEALTH_EXTEND_V3_APP_PLAN.md
+health_reader/HEALTH_EXTEND_V3_SPEC.md
+health_reader/HEALTH_EXTEND_V4_ANALYZER_PLAN.md
+health_reader/HEALTH_EXTEND_V4_SPEC.md
+health_reader/HEALTH_EXTEND_V5_ANALYZER_PLAN.md
+health_reader/HEALTH_EXTEND_V5_APP_PLAN.md
+health_reader/HEALTH_EXTEND_V5_SPEC.md
+health_reader/PHONE_HEALTH_V2_SPEC.md
+health_reader/V6_SPEC.md

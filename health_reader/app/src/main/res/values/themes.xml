@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 浅色主题。状态栏/导航栏在 Android 15+（targetSdk 36）边缘到边强制下会失效，
+         需由代码对根视图做 WindowInsets 内边距，并将状态栏图标设为深色
+         （WindowCompat.getInsetsController().isAppearanceLightStatusBars = true）。 -->
+    <style name="Theme.HealthReader" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_pressed</item>
+        <item name="colorAccent">@color/primary</item>
+
+        <item name="android:windowBackground">@color/bg_page</item>
+        <item name="android:colorBackground">@color/bg_page</item>
+        <item name="android:statusBarColor">@color/bg_page</item>
+        <item name="android:navigationBarColor">@color/bg_page</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>
