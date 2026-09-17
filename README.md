@@ -68,7 +68,7 @@ Windows 部署：
 #    zazaki_health_receiver/ 复制到 C:\Users\hzj\zazaki_health_receiver\
 
 # 3. 启动服务（WSL）
-health start
+zazaki_health start
 ```
 
 说明：analyzer 的 LLM 解读依赖 `analyzer/config.json` 中的 API key；未配置或调用失败时自动降级为模板解读。
@@ -76,10 +76,10 @@ health start
 ## 6. 服务控制
 
 ```bash
-health <start|stop|restart|status> [all|dashboard|receiver]
+zazaki_health <start|stop|restart|status> [all|dashboard|receiver]
 ```
 
-- WSL 包装命令 `~/.local/bin/health` 转发到 Windows 侧 `health_service.ps1`。
+- WSL 包装命令 `~/.local/bin/zazaki_health` 转发到 Windows 侧 `health_service.ps1`。
 - 无参数等价于 `status all`。
 - 服务不自动启动：仅在命令启动后运行。
 - 直接调用（Windows）：`powershell -ExecutionPolicy Bypass -File health_service.ps1 start all`。
