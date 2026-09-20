@@ -266,6 +266,50 @@ def infer_report_date(payload: dict, filename: str = "") -> Optional[date]:
     return None
 
 
+_SPAN_KEYS = ("blood_oxygen", "skin_temperature", "energy_score",
+              "water_intake", "body_composition", "steps", "activity",
+              "floors", "blood_pressure", "blood_glucose",
+              "body_temperature", "nutrition", "exercise")
+
+
+def collected_span(payload: dict, rdate: date) -> Optional[tuple]:
+    """First/last collected sample (local time) belonging to report day rdate.
+
+    Every record (HR, vitals, activity, ...) counts when its local date is
+    rdate, so multi-day history bundled in the file (e.g. energy_score carries
+    ~14 days) never inflates the span. A sleep session counts when it ends on
+    rdate, and its start is included even when it fell on the previous day
+    (fell asleep 23:50 -> span starts 23:50 the day before).
+    Returns (start_local, end_local) or None when the day has no timestamp."""
+    payload = normalize_payload(payload)
+    times: list = []
+
+    def _keep(t) -> bool:
+        return t is not None and to_local(t).date() == rdate
+
+    for t, _ in payload.get("heart_rate") or []:
+        if _keep(t):
+            times.append(t)
+    for rec in payload.get("sleep") or []:
+        if _keep(rec.get("t")):
+            times.append(rec["t"])
+        for sess in rec.get("sessions") or []:
+            # A session belongs to rdate when it ends that local morning; its
+            # start may fall on the previous day (e.g. fell asleep 23:50).
+            end = sess.get("end")
+            if end is not None and to_local(end).date() == rdate:
+                if sess.get("start") is not None:
+                    times.append(sess["start"])
+                times.append(end)
+    for key in _SPAN_KEYS:
+        for it in payload.get(key) or []:
+            if isinstance(it, dict) and _keep(it.get("t")):
+                times.append(it["t"])
+    if not times:
+        return None
+    return to_local(min(times)), to_local(max(times))
+
+
 def classify_interval(gap_s: float) -> str:
     if gap_s <= 105:
         return "1min"
@@ -330,6 +374,7 @@ def compute_day_stats(payload: dict) -> dict:
 
     score = dur = None
     bedtime = wake = None
+    bedtime_full = wake_full = None
     window = None            # (start_utc, end_utc) of longest session
     deep_min = 0.0
     stage_minutes: dict = {}
@@ -343,6 +388,8 @@ def compute_day_stats(payload: dict) -> dict:
             window = (s0["start"], s0["end"])
             bedtime = to_local(s0["start"]).strftime("%H:%M")
             wake = to_local(s0["end"]).strftime("%H:%M")
+            bedtime_full = to_local(s0["start"]).strftime("%Y-%m-%d %H:%M")
+            wake_full = to_local(s0["end"]).strftime("%Y-%m-%d %H:%M")
             segs = []
             for sess in main_rec["sessions"]:
                 for stg in sess["stages"]:
@@ -535,6 +582,8 @@ def compute_day_stats(payload: dict) -> dict:
             "duration_text": fmt_duration(dur),
             "bedtime": bedtime,
             "wake": wake,
+            "bedtime_full": bedtime_full,
+            "wake_full": wake_full,
             "deep_min": round(deep_min, 1),
             "stages": stage_list,
         },

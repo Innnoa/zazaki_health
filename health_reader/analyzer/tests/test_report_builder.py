@@ -163,6 +163,52 @@ def trend_dict(enough=False):
     return base
 
 
+class TestTimeSpan(unittest.TestCase):
+    def _meta(self):
+        m = meta()
+        m["span_label"] = "数据时间跨度"
+        m["span_start"] = "2026-09-06 00:00"
+        m["span_end"] = "2026-09-06 23:59"
+        return m
+
+    def test_header_shows_data_span(self):
+        h = RB.build_html(self._meta(), fake_day(),
+                          {"rows": [], "deviations": [], "parsed_days": 0},
+                          "x", "template")
+        self.assertIn("数据时间跨度 2026-09-06 00:00 – 2026-09-06 23:59（Asia/Shanghai）", h)
+        self.assertIn("<title>健康晨报 2026-09-06（2026-09-06 00:00 – 2026-09-06 23:59）</title>", h)
+
+    def test_span_label_defaults_when_missing(self):
+        m = meta()
+        m["span_start"] = "2026-09-06 00:00"
+        m["span_end"] = "2026-09-06 23:59"
+        h = RB.build_html(m, fake_day(),
+                          {"rows": [], "deviations": [], "parsed_days": 0},
+                          "x", "template")
+        self.assertIn("时间跨度 2026-09-06 00:00 – 2026-09-06 23:59", h)
+
+    def test_absent_span_leaves_header_unchanged(self):
+        h = RB.build_html(meta(), fake_day(),
+                          {"rows": [], "deviations": [], "parsed_days": 0},
+                          "x", "template")
+        self.assertNotIn("时间跨度", h)
+
+    def test_sleep_line_prefers_full_datetimes(self):
+        d = fake_day()
+        d["sleep"]["bedtime_full"] = "2026-09-05 23:04"
+        d["sleep"]["wake_full"] = "2026-09-06 11:30"
+        h = RB.build_html(meta(), d,
+                          {"rows": [], "deviations": [], "parsed_days": 0},
+                          "x", "template")
+        self.assertIn("入睡 <b>2026-09-05 23:04</b> → 醒来 <b>2026-09-06 11:30</b>", h)
+
+    def test_sleep_line_falls_back_to_hhmm(self):
+        h = RB.build_html(meta(), fake_day(),
+                          {"rows": [], "deviations": [], "parsed_days": 0},
+                          "x", "template")
+        self.assertIn("入睡 <b>01:10</b> → 醒来 <b>11:30</b>", h)
+
+
 class TestV4Html(unittest.TestCase):
     def test_segmented_top_box(self):
         h = RB.build_html(meta(), fake_day(), {"rows": [], "deviations": [], "parsed_days": 0},

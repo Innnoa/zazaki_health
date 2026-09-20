@@ -347,6 +347,11 @@ def build_html(meta: dict, day: dict, baseline: dict, llm_text: str,
     blood_glucose = day.get("blood_glucose")
     body_temperature = day.get("body_temperature")
     nutrition = day.get("nutrition") or {"count": 0, "total_kcal": None}
+    span_start = meta.get("span_start")
+    span_end = meta.get("span_end")
+    span_label = meta.get("span_label") or "时间跨度"
+    span_head = (f'{esc(span_label)} {esc(span_start)} – {esc(span_end)}（Asia/Shanghai） · '
+                 if span_start and span_end else "")
     src_note = "LLM 解读" if llm_source == "llm" else "模板解读（LLM 未启用/失败）"
     segs = _split_segments(llm_text)
     if segs:
@@ -359,7 +364,9 @@ def build_html(meta: dict, day: dict, baseline: dict, llm_text: str,
     if s["available"]:
         sec1.append(f'<h2>① 昨晚睡眠总览</h2>')
         sec1.append(f'<p>睡眠得分 <b>{s["score"]}</b> · 总时长 <b>{esc(s["duration_text"])}</b></p>')
-        if s["bedtime"] and s["wake"]:
+        if s.get("bedtime_full") and s.get("wake_full"):
+            sec1.append(f'<p>入睡 <b>{esc(s["bedtime_full"])}</b> → 醒来 <b>{esc(s["wake_full"])}</b>（Asia/Shanghai）</p>')
+        elif s["bedtime"] and s["wake"]:
             sec1.append(f'<p>入睡 <b>{esc(s["bedtime"])}</b> → 醒来 <b>{esc(s["wake"])}</b>（Asia/Shanghai）</p>')
         else:
             sec1.append("<p>入睡/醒来时刻缺数据。</p>")
@@ -474,7 +481,7 @@ def build_html(meta: dict, day: dict, baseline: dict, llm_text: str,
     return f"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>健康晨报 {esc(meta['date'])}</title>
+<title>健康晨报 {esc(meta['date'])}{('（' + esc(span_start) + ' – ' + esc(span_end) + '）') if span_start and span_end else ''}</title>
 <style>
 body{{font-family:'Microsoft YaHei',system-ui,sans-serif;max-width:760px;margin:24px auto;
 padding:0 16px;color:#212529;line-height:1.6}}
@@ -485,7 +492,7 @@ td,th{{border:1px solid #dee2e6;padding:4px 12px;font-size:14px}}
 ul{{margin:8px 0 8px 20px}}
 </style></head><body>
 <h1>健康晨报 {esc(meta['date'])}</h1>
-<p class="muted">来源 {esc(meta['source_name'])} · 报告生成 {esc(meta['generated_at_local'])}</p>
+<p class="muted">{span_head}来源 {esc(meta['source_name'])} · 报告生成 {esc(meta['generated_at_local'])}</p>
 <div style="padding:10px 12px;background:#f1f8ff;border-radius:6px"><b>{src_note}</b>{top_inner}</div>
 {body}
 </body></html>"""

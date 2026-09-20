@@ -94,6 +94,13 @@ def run_file(file_path: Path, cfg: dict, data_dir: Path,
     out = reports_dir / f"{rdate.strftime('%Y%m%d')}_report.html"
     meta = {"date": rdate.isoformat(), "source_name": file_path.name,
             "generated_at_local": _dt.datetime.now().strftime("%Y-%m-%d %H:%M")}
+    span = stats.collected_span(payload, rdate)
+    if span is None:  # no timestamp at all: state the report's calendar day
+        span = (_dt.datetime.combine(rdate, _dt.time(0, 0)),
+                _dt.datetime.combine(rdate, _dt.time(23, 59)))
+    meta["span_label"] = "数据时间跨度"
+    meta["span_start"] = span[0].strftime("%Y-%m-%d %H:%M")
+    meta["span_end"] = span[1].strftime("%Y-%m-%d %H:%M")
     out.write_text(report_builder.build_html(meta, day, comp, text, src, trend),
                    encoding="utf-8")
     s = day["sleep"]

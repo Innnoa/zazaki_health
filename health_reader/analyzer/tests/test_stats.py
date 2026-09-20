@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import sys, tempfile, json
 
@@ -687,6 +687,46 @@ class TestV5DayStats(unittest.TestCase):
                 (Path(td) / f"{d}_sleep_hr.json").write_text(json.dumps(p), encoding="utf-8")
             tr = stats.build_trend(td, window_days=7)
             self.assertEqual(tr["steps"], [5000.0, 5000.0, 5000.0])
+
+
+class TestCollectedSpan(unittest.TestCase):
+    def test_span_covers_all_samples_on_report_day(self):
+        span = stats.collected_span(sample_payload(), date(2026, 9, 6))
+        self.assertIsNotNone(span)
+        self.assertEqual(span[0].strftime("%Y-%m-%d %H:%M"), "2026-09-06 01:00")
+        self.assertEqual(span[1].strftime("%Y-%m-%d %H:%M"), "2026-09-06 11:40")
+
+    def test_span_includes_previous_day_sleep_start(self):
+        pay = {"heart_rate": [{"t": "2026-09-06T00:30:00Z", "hr": 60}],  # local 08:30
+               "sleep": [{"t": "2026-09-05T15:50:00Z", "score": 80, "duration_s": 28800,
+                          "sessions": [{"start": "2026-09-05T15:50:00Z",  # local 23:50
+                                        "end": "2026-09-06T00:05:00Z",     # local 08:05
+                                        "stages": []}]}]}
+        span = stats.collected_span(pay, date(2026, 9, 6))
+        self.assertEqual(span[0].strftime("%Y-%m-%d %H:%M"), "2026-09-05 23:50")
+        self.assertEqual(span[1].strftime("%Y-%m-%d %H:%M"), "2026-09-06 08:30")
+
+    def test_span_ignores_other_days_history(self):
+        pay = sample_payload()
+        pay["energy_score"] = [{"t": "2026-08-31T00:00:00Z", "score": 80},
+                               {"t": "2026-09-06T00:00:00Z", "score": 90}]
+        span = stats.collected_span(pay, date(2026, 9, 6))
+        self.assertEqual(span[0].strftime("%Y-%m-%d %H:%M"), "2026-09-06 01:00")
+
+    def test_span_none_without_timestamps(self):
+        self.assertIsNone(stats.collected_span(
+            {"heart_rate": [], "sleep": []}, date(2026, 9, 6)))
+
+    def test_sleep_carries_full_datetimes(self):
+        ds = stats.compute_day_stats(sample_payload())
+        self.assertEqual(ds["sleep"]["bedtime_full"], "2026-09-06 01:10")
+        self.assertEqual(ds["sleep"]["wake_full"], "2026-09-06 11:30")
+
+    def test_no_session_leaves_full_datetimes_none(self):
+        pay = {"heart_rate": sample_payload()["heart_rate"], "sleep": []}
+        ds = stats.compute_day_stats(pay)
+        self.assertIsNone(ds["sleep"]["bedtime_full"])
+        self.assertIsNone(ds["sleep"]["wake_full"])
 
 
 if __name__ == "__main__":
